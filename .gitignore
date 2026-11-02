@@ -1,0 +1,9 @@
+node_modules
+dist
+public/pdfjs
+public/wasm
+test/*.pdf
+test/*.png
+test/*.ttf
+.DS_Store
+Thumbs.db

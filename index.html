@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#243E6B" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="YB-PDF" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <title>YB-PDF</title>
+</head>
+<body>
+  <div id="app" class="app" data-panel="open">
+    <!-- 머리줄 -->
+    <header class="topbar">
+      <span class="brand"><img class="brand-icon" src="icons/icon.svg" alt="" width="26" height="26" /><span class="brand-name">YB-PDF</span></span>
+      <span class="doc-title" id="doc-title"><span class="dot" id="dirty-dot" title="저장하지 않은 변경 내용" hidden>●</span><span id="doc-name">문서를 여세요</span></span>
+      <span class="sp"></span>
+      <div class="pager" id="pager" hidden>
+        <button class="icon-btn" id="btn-prev" title="이전 쪽 (PageUp)" data-icon="up"></button>
+        <input id="page-input" class="page-input" inputmode="numeric" aria-label="쪽 번호" /><span class="page-total" id="page-total"></span>
+        <button class="icon-btn" id="btn-next" title="다음 쪽 (PageDown)" data-icon="down"></button>
+      </div>
+      <div class="zoom" id="zoom" hidden>
+        <button class="icon-btn" id="btn-zoom-out" title="축소 (Ctrl -)" data-icon="minus"></button>
+        <select id="sel-zoom" class="sel-zoom" title="배율">
+          <option value="width">폭 맞춤</option>
+          <option value="page">쪽 맞춤</option>
+          <option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option>
+          <option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option>
+          <option value="custom" hidden></option>
+        </select>
+        <button class="icon-btn" id="btn-zoom-in" title="확대 (Ctrl +)" data-icon="plus"></button>
+      </div>
+    </header>
+
+    <!-- 문서 -->
+    <main id="viewer" class="viewer" tabindex="-1">
+      <div id="pages" class="pages"></div>
+      <section id="empty" class="empty-state">
+        <img src="icons/icon.svg" alt="" width="72" height="72" />
+        <h2>YB-PDF</h2>
+        <p>PDF 파일을 이 창에 끌어다 놓거나 열기를 누르세요.</p>
+        <button class="btn-primary big" id="btn-open-big">📂 PDF 열기 <kbd>Ctrl+O</kbd></button>
+        <div class="recent" id="recent-empty"></div>
+      </section>
+      <div class="loading" id="loading" hidden><span class="spinner"></span><span id="loading-msg">여는 중…</span></div>
+    </main>
+
+    <!-- 오른쪽 메뉴 -->
+    <aside class="side" id="side" aria-label="메뉴">
+      <div class="panel" id="panel">
+        <div class="panel-resizer" id="panel-resizer" title="끌어서 너비 조절 · 두 번 누르면 기본 너비"></div>
+        <nav class="tabs" role="tablist">
+          <button class="tab on" data-tab="tool">도구</button>
+          <button class="tab" data-tab="pages">쪽</button>
+          <button class="tab" data-tab="list">주석<span class="badge" id="annot-count"></span></button>
+          <button class="tab" data-tab="file">파일</button>
+        </nav>
+        <div class="tab-body" id="tab-tool"></div>
+        <div class="tab-body" id="tab-pages" hidden><div class="thumbs" id="thumbs"></div></div>
+        <div class="tab-body" id="tab-list" hidden><div id="annot-list" class="annot-list"></div></div>
+        <div class="tab-body" id="tab-file" hidden></div>
+      </div>
+      <div class="rail" id="rail">
+        <button class="rail-btn" data-cmd="open" title="열기 (Ctrl+O)" data-icon="open"></button>
+        <button class="rail-btn" data-cmd="save" title="저장 (Ctrl+S)" data-icon="save"></button>
+        <span class="rail-sep"></span>
+        <button class="rail-btn tool" data-tool="select" title="선택 (V)" data-icon="select"></button>
+        <button class="rail-btn tool" data-tool="hand" title="손 — 끌어서 이동 (H)" data-icon="hand"></button>
+        <button class="rail-btn tool" data-tool="highlight" title="형광펜 (M) — 글자를 끌면 칠하고, 빈 곳은 자유롭게" data-icon="highlight"></button>
+        <button class="rail-btn tool" data-tool="pen" title="펜 (P)" data-icon="pen"></button>
+        <button class="rail-btn tool" data-tool="note" title="메모 (N)" data-icon="note"></button>
+        <button class="rail-btn tool" data-tool="text" title="텍스트 상자 (T)" data-icon="text"></button>
+        <button class="rail-btn tool" data-tool="replace" title="텍스트 수정 (E) — 고칠 낱말·문장을 끌어 선택" data-icon="replace"></button>
+        <button class="rail-btn tool" data-tool="sign" title="서명 (S)" data-icon="sign"></button>
+        <button class="rail-btn tool" data-tool="eraser" title="지우개 (X)" data-icon="eraser"></button>
+        <span class="rail-sep"></span>
+        <button class="rail-btn" data-cmd="undo" title="실행 취소 (Ctrl+Z)" data-icon="undo"></button>
+        <button class="rail-btn" data-cmd="redo" title="다시 실행 (Ctrl+Y)" data-icon="redo"></button>
+        <span class="rail-sp"></span>
+        <button class="rail-btn" data-cmd="spread" id="btn-spread" title="1쪽 / 2쪽 보기 (Ctrl+2)" data-icon="spread1"></button>
+        <button class="rail-btn" data-cmd="panel" id="btn-panel" title="메뉴 펼치기·접기 (Ctrl+\)" data-icon="panel"></button>
+      </div>
+    </aside>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
