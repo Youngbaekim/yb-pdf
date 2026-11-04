@@ -17,8 +17,11 @@ export const ICONS = {
   redo: s('<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>'),
   spread1: s('<rect x="6.5" y="3" width="11" height="18" rx="1.6"/>'),
   spread2: s('<rect x="2.5" y="4" width="9" height="16" rx="1.4"/><rect x="12.5" y="4" width="9" height="16" rx="1.4"/>'),
-  panel: s('<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M15 4v16"/><path d="m10 10-2 2 2 2"/>'),
-  panelClose: s('<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M15 4v16"/><path d="m8 10 2 2-2 2"/>'),
+  // 왼쪽 메뉴 스위치: 펼침(왼쪽 칸 채움) / 접힘(빈 칸)
+  panel: s('<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/>'),
+  panelOpen: s('<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/><rect x="3.8" y="4.8" width="4.4" height="14.4" rx="1.6" fill="currentColor" stroke="none"/>'),
+  close: s('<path d="M7 7l10 10M17 7 7 17"/>'),
+  window: s('<rect x="3" y="5" width="14" height="12" rx="2"/><path d="M7 5V3.8A.8.8 0 0 1 7.8 3H20a1 1 0 0 1 1 1v10.2a.8.8 0 0 1-.8.8H17"/>'),
   up: s('<path d="m6 15 6-6 6 6"/>'),
   down: s('<path d="m6 9 6 6 6-6"/>'),
   plus: s('<path d="M12 5v14M5 12h14"/>'),

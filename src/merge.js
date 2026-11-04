@@ -1,7 +1,7 @@
 // PDF 병합: 여러 파일을 순서대로 합쳐 새 문서로 열기
 import { S } from './state.js';
 import { mergePdfs } from './pdfwrite.js';
-import { buildBytes, openBytes, guardDirty } from './fileio.js';
+import { buildBytes, openBytes } from './fileio.js';
 import { toast } from './dialogs.js';
 import { PDFDocument } from 'pdf-lib';
 
@@ -21,7 +21,7 @@ export async function openMerge() {
     <ol class="merge-list"></ol>
     <label class="btn add-files">＋ 파일 추가<input type="file" accept="application/pdf,.pdf" multiple hidden></label>
     <div class="dlg-foot"><span class="sum"></span><span class="sp"></span>
-      <button type="button" class="btn" data-v="cancel">취소</button><button type="button" class="btn btn-primary" data-v="ok">병합하여 열기</button></div></form>`;
+      <button type="button" class="btn" data-v="cancel">취소</button><button type="button" class="btn btn-primary" data-v="ok">병합하여 새 탭으로 열기</button></div></form>`;
   document.body.appendChild(d);
   const list = d.querySelector('.merge-list');
   let dragFrom = -1;
@@ -79,15 +79,14 @@ export async function openMerge() {
         for (const it of items) parts.push(await it.get());
         const merged = await mergePdfs(parts);
         d.close();
-        if (!(await guardDirty())) return;
         const base = (items[0].name.replace(/ \(지금 문서.*\)$/, '').replace(/\.pdf$/i, '')) || '병합';
-        await openBytes(merged, `${base}_병합.pdf`, null, { dirty: true });
+        await openBytes(merged, `${base}_병합.pdf`, null, { dirty: true, here: true }); // 새 탭으로 열림
         toast(`${items.length}개 파일을 합쳤습니다. Ctrl+S로 저장할 위치를 정하세요.`, 4000);
       } catch (err) {
         console.error(err);
         toast(`병합 실패: ${err?.message || err}`, 5000);
         ok.disabled = false;
-        ok.textContent = '병합하여 열기';
+        ok.textContent = '병합하여 새 탭으로 열기';
       }
     });
   });

@@ -1,23 +1,85 @@
 {
   "name": "yb-pdf",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "postinstall": "node scripts/copy-pdfjs.mjs"
+    "postinstall": "node scripts/copy-pdfjs.mjs",
+    "app": "vite build && electron .",
+    "dist": "vite build && electron-builder --win nsis --x64"
   },
-  "dependencies": {
+  "devDependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
+    "electron": "^45.2.2",
+    "electron-builder": "^26.18.0",
     "harfbuzzjs": "^1.6.4",
     "idb": "^8.0.4",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.5.438",
-    "perfect-freehand": "^1.2.3"
-  },
-  "devDependencies": {
+    "perfect-freehand": "^1.2.3",
+    "resedit": "^3.1.0",
     "vite": "^8.3.5"
   },
   "type": "module",
-  "private": true
+  "private": true,
+  "description": "YB-PDF 개인용 PDF 읽기·편집",
+  "author": "YB",
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "io.github.youngbaekim.ybpdf",
+    "productName": "YB-PDF",
+    "copyright": "YB (개인용·비상업)",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "afterPack": "build/afterPack.mjs",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "executableName": "YB-PDF"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "YB-PDF",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerLanguages": [
+        "ko_KR"
+      ],
+      "language": "1042",
+      "artifactName": "YB_C_YB-PDF_Setup_${version}.exe",
+      "deleteAppDataOnUninstall": false
+    },
+    "fileAssociations": [
+      {
+        "ext": "pdf",
+        "name": "YB-PDF.Document",
+        "description": "PDF 문서",
+        "role": "Editor",
+        "icon": "build/icon.ico"
+      }
+    ],
+    "publish": null
+  }
 }

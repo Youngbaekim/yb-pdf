@@ -30,6 +30,13 @@ export function resetHistory(list) {
   emit('annots');
 }
 
+/** 탭을 바꿀 때 문서별 실행 취소 기록을 보관·복원 */
+export const getHistory = () => ({ undo: undoStack, redo: redoStack });
+export function setHistory(h) {
+  undoStack = h?.undo || [];
+  redoStack = h?.redo || [];
+}
+
 export const canUndo = () => undoStack.length > 0;
 export const canRedo = () => redoStack.length > 0;
 

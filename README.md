@@ -14,17 +14,29 @@ npm run dev      # 개발 서버 실행 → 화면에 나오는 주소를 브라
 - 배포: `main` 브랜치에 올리면 GitHub Actions가 자동으로 GitHub Pages에 배포 (https://youngbaekim.github.io/yb-pdf/)
 - 새 버전 안내를 띄우려면 `public/sw.js`의 `VERSION`과 `src/main.js`의 `VERSION`을 함께 올린 뒤 배포
 
-## 기능 (v0.1.0)
+## 기능 (v0.3.0)
 
 | 구분 | 내용 |
 |---|---|
 | 열기·저장 | 열기(Ctrl+O)·끌어다 놓기·최근 파일, **Ctrl+S 같은 파일에 덮어쓰기**, 다른 이름으로 저장, 설치 앱에서 탐색기 '연결 프로그램' |
 | 보기 | 1쪽 / 2쪽 보기, 2쪽 보기의 **표지 단독(공백) 켜기·끄기**, 폭·쪽 맞춤, 확대·축소(Ctrl+휠·두 손가락), 쪽 미리보기 |
-| 메뉴 | 오른쪽 아이콘 줄 + 접이식 패널(도구·쪽·주석·파일), 너비 조절, 다크 모드 |
+| 메뉴 | 왼쪽 접이식 패널(도구·쪽·주석·파일, 머리줄 왼쪽 스위치로 열고 닫기), 오른쪽 도구 줄, 너비 조절, 다크 모드 |
+| 여러 문서 | 두 번째 PDF부터 상단 탭으로 열기, 탭 끌어 순서 변경, 창 밖에 놓으면 새 창으로 분리, 다른 창의 탭 줄에 놓으면 그 창으로 이동, 오른쪽 클릭 메뉴(새 창으로 옮기기·닫기), 설정으로 '새 PDF는 새 창으로' |
 | 주석 | 형광펜(글자 선택·자유), 펜(필압), 메모, 텍스트 상자, 지우개, 이동·크기 조절·복제, 실행 취소 |
 | 텍스트 수정 | 낱말·문장을 선택 → 바탕색으로 덮고 새 글자 기록 (바탕·글자색 자동 추출) |
 | 서명 | 서명 패드·이미지 서명(흰 바탕 자동 제거), 서명 목록 저장, 끌어서 배치·크기 조절 |
 | 병합 | 여러 PDF를 순서 조정 후 합쳐 새 문서로 열기 (지금 문서의 주석 포함) |
+
+## Windows 설치판 (v0.3.0~)
+
+| 항목 | 내용 |
+|---|---|
+| 설치 파일 | `YB_C_YB-PDF_Setup_버전.exe` 하나 (인터넷·Node.js 불필요, 관리자 권한 불필요 — 사용자 단위 설치) |
+| 만들기 | `npm run dist` → `release` 폴더에 설치 파일 생성 |
+| 시험 실행 | `npm run app` (설치 없이 데스크톱 창으로 실행) |
+| 파일 연결 | 설치하면 PDF '연결 프로그램' 목록에 YB-PDF 등록 → 탐색기에서 더블클릭하면 실행 중인 창에 새 탭으로 열림 |
+| 저장 | 연 파일 경로에 바로 덮어쓰기 (임시 파일에 먼저 쓴 뒤 바꿔치기) |
+| 업데이트 | 새 설치 파일을 실행하면 덮어 설치 (설정·서명 목록 유지) |
 
 ## 저장 방식
 
@@ -41,5 +53,5 @@ npm run dev      # 개발 서버 실행 → 화면에 나오는 주소를 브라
 
 ## 사용 라이브러리·글꼴
 
-pdf.js(Apache-2.0), pdf-lib(MIT), @pdf-lib/fontkit(MIT), HarfBuzz/harfbuzzjs(MIT), perfect-freehand(MIT), idb(ISC), Vite(MIT)
-나눔고딕·나눔명조·나눔손글씨 펜 (SIL Open Font License 1.1, `public/fonts/OFL.txt`)
+Electron(MIT), electron-builder(MIT), resedit(MIT), pdf.js(Apache-2.0), pdf-lib(MIT), @pdf-lib/fontkit(MIT), HarfBuzz/harfbuzzjs(MIT), perfect-freehand(MIT), idb(ISC), Vite(MIT)
+나눔고딕·나눔명조·나눔손글씨 펜 (SIL Open Font License 1.1, `public/fonts/OFL.txt`), Pretendard (SIL OFL 1.1, `public/fonts/Pretendard-LICENSE.txt`)

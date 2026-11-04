@@ -6,13 +6,15 @@ import { applyIcons, ICONS } from './icons.js';
 import * as V from './viewer.js';
 import * as A from './annots.js';
 import { initTools, setTool, select, editAnnot } from './tools.js';
-import { pickAndOpen, openHandle, save, initDrop, recentList, forget, printDoc, rememberPage, canPick } from './fileio.js';
+import { pickAndOpen, openHandle, openBytes, save, initDrop, recentList, forget, printDoc, rememberPage, canPick } from './fileio.js';
+import * as D from './docs.js';
+import { initTabs, anyDirty, active, closeTab, takeHandoff } from './docs.js';
 import { openMerge } from './merge.js';
 import { PALETTE, swatches, bindSwatches, toast, openSignPad, getSigns, deleteSign } from './dialogs.js';
 import { FONT_LABEL } from './pdfwrite.js';
 import './overlay.js';
 
-const VERSION = 'v0.1.0';
+const VERSION = 'v0.3.0';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const app = $('#app');
@@ -21,7 +23,7 @@ const viewer = $('#viewer');
 applyIcons();
 applyTheme();
 
-/* ───────── 오른쪽 메뉴: 펼치기·접기·너비 ───────── */
+/* ───────── 왼쪽 메뉴: 펼치기·접기(머리줄 왼쪽 스위치)·너비 ───────── */
 const PANEL_DEF = 300;
 const narrow = () => window.innerWidth <= 760; // 휴대폰: 메뉴가 문서 위에 겹쳐 열림
 let panelOpen = narrow() ? false : pref('panel', true);
@@ -29,8 +31,10 @@ let panelW = pref('panel-w', PANEL_DEF);
 function applyPanel() {
   app.dataset.panel = panelOpen ? 'open' : 'closed';
   app.style.setProperty('--panel-w', `${panelW}px`);
-  $('#btn-panel').innerHTML = panelOpen ? ICONS.panelClose : ICONS.panel;
-  $('#btn-panel').title = panelOpen ? '메뉴 접기 (Ctrl+\\)' : '메뉴 펼치기 (Ctrl+\\)';
+  const b = $('#btn-panel');
+  b.innerHTML = panelOpen ? ICONS.panelOpen : ICONS.panel;
+  b.title = panelOpen ? '메뉴 접기 (Ctrl+\\)' : '메뉴 펼치기 (Ctrl+\\)';
+  b.setAttribute('aria-pressed', String(panelOpen));
 }
 function togglePanel(v = !panelOpen) {
   panelOpen = v;
@@ -39,11 +43,12 @@ function togglePanel(v = !panelOpen) {
   requestAnimationFrame(() => V.refit());
 }
 applyPanel();
+$('#btn-panel').addEventListener('click', () => togglePanel());
 (() => {
   const rz = $('#panel-resizer');
   let x0 = 0, w0 = 0;
   const move = (e) => {
-    panelW = Math.max(220, Math.min(560, w0 + (x0 - e.clientX)));
+    panelW = Math.max(220, Math.min(560, w0 + (e.clientX - x0)));
     app.style.setProperty('--panel-w', `${panelW}px`);
   };
   const up = () => {
@@ -209,8 +214,6 @@ on('tool', () => {
 
 /* ───────── 머리줄 ───────── */
 function updateTitle() {
-  $('#doc-name').textContent = S.pdf ? S.fileName : '문서를 여세요';
-  $('#dirty-dot').hidden = !S.dirty;
   document.title = S.pdf ? `${S.dirty ? '● ' : ''}${S.fileName} — YB-PDF` : 'YB-PDF';
   $('[data-cmd=save]').classList.toggle('attn', S.dirty);
 }
@@ -255,14 +258,16 @@ on('scale', updateZoomSel);
 
 /* ───────── 문서 열림 ───────── */
 on('doc', () => {
-  app.classList.add('has-doc');
-  $('#pager').hidden = false;
-  $('#zoom').hidden = false;
+  app.classList.toggle('has-doc', !!S.pdf);
+  $('#pager').hidden = !S.pdf;
+  $('#zoom').hidden = !S.pdf;
+  updateUndo();
   updateTitle();
   updatePager();
   updateZoomSel();
   if (S.readOnly) setTool('select');
-  if (tab === 'pages') buildThumbs(); else thumbsBuiltFor = null;
+  thumbsBuiltFor = null;
+  if (tab === 'pages') buildThumbs();
   if (tab === 'list') renderList();
   if (tab === 'file') renderFileTab();
 });
@@ -275,7 +280,8 @@ let thumbIO = null;
 let thumbTimer = 0;
 const buildThumbsLater = () => { thumbsBuiltFor = null; if (tab === 'pages') { clearTimeout(thumbTimer); thumbTimer = setTimeout(buildThumbs, 50); } };
 function buildThumbs() {
-  if (!S.pdf || thumbsBuiltFor === S.pdf) return;
+  if (!S.pdf) { $('#thumbs').innerHTML = ''; thumbsBuiltFor = null; return; }
+  if (thumbsBuiltFor === S.pdf) return;
   thumbsBuiltFor = S.pdf;
   const box = $('#thumbs');
   thumbIO?.disconnect();
@@ -362,7 +368,9 @@ async function renderFileTab() {
       <button class="fbtn" data-cmd="saveas" ${S.pdf ? '' : 'disabled'}>${ICONS.save}<span>다른 이름으로 저장</span><kbd>Ctrl+Shift+S</kbd></button>
       <button class="fbtn" data-cmd="merge">${ICONS.spread2}<span>PDF 병합</span></button>
       <button class="fbtn" data-cmd="print" ${S.pdf ? '' : 'disabled'}>${ICONS.text}<span>인쇄 (브라우저 PDF 창)</span><kbd>Ctrl+P</kbd></button>
-    </div>${canPick ? '' : '<p class="hint warn">이 브라우저는 파일 덮어쓰기를 지원하지 않아 저장하면 내려받기로 저장됩니다. (PC의 크롬·엣지 권장)</p>'}</section>
+    </div>
+    <label class="chk"><input type="checkbox" id="chk-newwin" ${pref('newWindow', false) ? 'checked' : ''}> 새 PDF는 새 창으로 열기 <span class="hint">(끄면 위쪽 탭으로 열림)</span></label>
+    ${canPick ? '' : '<p class="hint warn">이 브라우저는 파일 덮어쓰기를 지원하지 않아 저장하면 내려받기로 저장됩니다. (PC의 크롬·엣지 권장)</p>'}</section>
     ${S.pdf ? `<section class="sec"><h4>문서 정보</h4><table class="info"><tr><th>파일</th><td>${esc(S.fileName)}</td></tr><tr><th>쪽 수</th><td>${S.pages.length}쪽</td></tr>
       <tr><th>크기</th><td>${kb(S.fileSize)}</td></tr><tr><th>주석</th><td>${S.annots.length}개</td></tr>${S.readOnly ? `<tr><th>상태</th><td class="warn">${esc(S.readOnlyReason)}</td></tr>` : ''}</table></section>` : ''}
     ${recent.length ? `<section class="sec"><h4>최근 파일</h4><div class="recent-list">${recent.map((r) => `<div class="rc" data-name="${esc(r.name)}"><button class="rc-open">${esc(r.name)}<small>${new Date(r.at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })}</small></button><button class="rc-x" title="목록에서 빼기">✕</button></div>`).join('')}</div></section>` : ''}
@@ -374,10 +382,16 @@ async function renderFileTab() {
       <tr><td><kbd>Ctrl+2</kbd></td><td>1쪽 / 2쪽 보기</td></tr>
       <tr><td><kbd>PageUp/Down</kbd>, <kbd>Home/End</kbd></td><td>쪽 이동</td></tr>
       <tr><td><kbd>Ctrl+\\</kbd></td><td>메뉴 접기·펼치기</td></tr>
+      <tr><td>탭 끌기</td><td>순서 변경 · 창 밖에 놓으면 새 창</td></tr>
+      <tr><td>탭 가운데 단추·<kbd>Ctrl+W</kbd></td><td>탭 닫기 (Ctrl+W는 설치한 앱에서)</td></tr>
     </table></section>
-    <section class="sec about"><p>YB-PDF ${VERSION} · 개인용(비상업) · 서버 없이 이 기기에서만 처리</p>
+    <section class="sec about"><p>YB-PDF ${VERSION}${window.ybpdfNative ? ' (Windows 앱)' : ''} · 개인용(비상업) · 서버 없이 이 기기에서만 처리</p>
     <p class="hint">한글 글꼴: 나눔고딕·나눔명조·나눔손글씨 펜 (SIL OFL) · PDF 처리: pdf.js, pdf-lib, HarfBuzz</p></section>`;
 }
+$('#tab-file').addEventListener('change', (e) => {
+  if (e.target.id === 'chk-newwin') setPref('newWindow', e.target.checked);
+});
+on('open-mode', () => { if (tab === 'file') renderFileTab(); });
 $('#tab-file').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-cmd]');
   if (b) return runCmd(b.dataset.cmd);
@@ -413,6 +427,7 @@ window.addEventListener('keydown', (e) => {
   if (mod && k === 's') { e.preventDefault(); save({ as: e.shiftKey }); return; }
   if (mod && k === 'o') { e.preventDefault(); pickAndOpen(); return; }
   if (mod && k === 'p' && S.pdf) { e.preventDefault(); printDoc(); return; }
+  if (mod && k === 'w' && active()) { e.preventDefault(); closeTab(active().id); return; } // 설치한 앱 창에서 동작
   if (typing) return;
   if (mod && k === 'z' && !e.shiftKey) { e.preventDefault(); A.undo(); return; }
   if (mod && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); A.redo(); return; }
@@ -449,19 +464,34 @@ new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout((
 
 window.addEventListener('beforeunload', (e) => {
   rememberPage();
-  if (S.dirty) { e.preventDefault(); e.returnValue = ''; }
+  if (anyDirty()) { e.preventDefault(); e.returnValue = ''; }
 });
+
+/* ───────── 문서 탭 ───────── */
+on('before-switch', rememberPage);
+$('#btn-new-tab').addEventListener('click', () => pickAndOpen());
+// 다른 창에서 옮겨 온 탭 (끌어 놓기·새 창으로 옮기기)
+on('handoff', (v) => openBytes(v.bytes, v.name, v.handle || null, { dirty: v.dirty, annots: v.prepared ? v.annots : undefined, current: v.current, index: v.index, here: true }));
+async function startHandoff() {
+  const key = new URLSearchParams(location.search).get('handoff');
+  if (!key) return;
+  history.replaceState(null, '', location.pathname);
+  const v = await takeHandoff(key);
+  if (v) emit('handoff', v);
+}
 
 /* ───────── 시작 ───────── */
 initTools();
+initTabs();
 initDrop();
+startHandoff();
 setTool('select');
 renderRecentEmpty();
 updateUndo();
 showTab('tool');
 
 // 서비스 워커 (오프라인 실행·설치) — 개발 서버에서는 쓰지 않음
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+if ('serviceWorker' in navigator && import.meta.env.PROD && !window.ybpdfNative) { // 데스크톱 앱은 파일이 이미 설치되어 있어 필요 없음
   navigator.serviceWorker.register(`${BASE}sw.js`).then((reg) => {
     reg.addEventListener('updatefound', () => {
       const nw = reg.installing;
@@ -488,4 +518,4 @@ function showUpdate(worker) {
 }
 
 // 개발·점검용
-window.__ybpdf = { S, A, V };
+window.__ybpdf = { S, A, V, D };

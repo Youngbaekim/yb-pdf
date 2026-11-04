@@ -7,3 +7,4 @@ test/*.png
 test/*.ttf
 .DS_Store
 Thumbs.db
+release

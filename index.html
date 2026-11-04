@@ -10,16 +10,18 @@
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <title>YB-PDF</title>
 </head>
 <body>
   <div id="app" class="app" data-panel="open">
-    <!-- 머리줄 -->
+    <!-- 머리줄: 메뉴 스위치 · 문서 탭 · 쪽 이동 · 배율 -->
     <header class="topbar">
-      <span class="brand"><img class="brand-icon" src="icons/icon.svg" alt="" width="26" height="26" /><span class="brand-name">YB-PDF</span></span>
-      <span class="doc-title" id="doc-title"><span class="dot" id="dirty-dot" title="저장하지 않은 변경 내용" hidden>●</span><span id="doc-name">문서를 여세요</span></span>
-      <span class="sp"></span>
+      <button class="icon-btn panel-switch" id="btn-panel" title="메뉴 펼치기·접기 (Ctrl+\)" aria-pressed="true"></button>
+      <img class="brand-icon" src="icons/icon.svg" alt="YB-PDF" width="22" height="22" />
+      <div class="tabstrip">
+        <div class="doc-tabs" id="doc-tabs" role="tablist" aria-label="열린 문서"></div>
+        <button class="icon-btn new-tab" id="btn-new-tab" title="새 탭에서 PDF 열기 (Ctrl+O)" data-icon="plus"></button>
+      </div>
       <div class="pager" id="pager" hidden>
         <button class="icon-btn" id="btn-prev" title="이전 쪽 (PageUp)" data-icon="up"></button>
         <input id="page-input" class="page-input" inputmode="numeric" aria-label="쪽 번호" /><span class="page-total" id="page-total"></span>
@@ -38,6 +40,21 @@
       </div>
     </header>
 
+    <!-- 왼쪽 메뉴: 도구·쪽·주석·파일 -->
+    <aside class="panel" id="panel" aria-label="메뉴">
+      <nav class="tabs" role="tablist">
+        <button class="tab on" data-tab="tool">도구</button>
+        <button class="tab" data-tab="pages">쪽</button>
+        <button class="tab" data-tab="list">주석<span class="badge" id="annot-count"></span></button>
+        <button class="tab" data-tab="file">파일</button>
+      </nav>
+      <div class="tab-body" id="tab-tool"></div>
+      <div class="tab-body" id="tab-pages" hidden><div class="thumbs" id="thumbs"></div></div>
+      <div class="tab-body" id="tab-list" hidden><div id="annot-list" class="annot-list"></div></div>
+      <div class="tab-body" id="tab-file" hidden></div>
+      <div class="panel-resizer" id="panel-resizer" title="끌어서 너비 조절 · 두 번 누르면 기본 너비"></div>
+    </aside>
+
     <!-- 문서 -->
     <main id="viewer" class="viewer" tabindex="-1">
       <div id="pages" class="pages"></div>
@@ -48,24 +65,12 @@
         <button class="btn-primary big" id="btn-open-big">📂 PDF 열기 <kbd>Ctrl+O</kbd></button>
         <div class="recent" id="recent-empty"></div>
       </section>
+      <div class="tab-drop-hint" id="tab-drop-hint" hidden></div>
       <div class="loading" id="loading" hidden><span class="spinner"></span><span id="loading-msg">여는 중…</span></div>
     </main>
 
-    <!-- 오른쪽 메뉴 -->
-    <aside class="side" id="side" aria-label="메뉴">
-      <div class="panel" id="panel">
-        <div class="panel-resizer" id="panel-resizer" title="끌어서 너비 조절 · 두 번 누르면 기본 너비"></div>
-        <nav class="tabs" role="tablist">
-          <button class="tab on" data-tab="tool">도구</button>
-          <button class="tab" data-tab="pages">쪽</button>
-          <button class="tab" data-tab="list">주석<span class="badge" id="annot-count"></span></button>
-          <button class="tab" data-tab="file">파일</button>
-        </nav>
-        <div class="tab-body" id="tab-tool"></div>
-        <div class="tab-body" id="tab-pages" hidden><div class="thumbs" id="thumbs"></div></div>
-        <div class="tab-body" id="tab-list" hidden><div id="annot-list" class="annot-list"></div></div>
-        <div class="tab-body" id="tab-file" hidden></div>
-      </div>
+    <!-- 오른쪽 도구 줄 -->
+    <aside class="side" id="side" aria-label="도구">
       <div class="rail" id="rail">
         <button class="rail-btn" data-cmd="open" title="열기 (Ctrl+O)" data-icon="open"></button>
         <button class="rail-btn" data-cmd="save" title="저장 (Ctrl+S)" data-icon="save"></button>
@@ -84,7 +89,6 @@
         <button class="rail-btn" data-cmd="redo" title="다시 실행 (Ctrl+Y)" data-icon="redo"></button>
         <span class="rail-sp"></span>
         <button class="rail-btn" data-cmd="spread" id="btn-spread" title="1쪽 / 2쪽 보기 (Ctrl+2)" data-icon="spread1"></button>
-        <button class="rail-btn" data-cmd="panel" id="btn-panel" title="메뉴 펼치기·접기 (Ctrl+\)" data-icon="panel"></button>
       </div>
     </aside>
   </div>
