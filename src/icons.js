@@ -22,6 +22,9 @@ export const ICONS = {
   panelOpen: s('<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/><rect x="3.8" y="4.8" width="4.4" height="14.4" rx="1.6" fill="currentColor" stroke="none"/>'),
   close: s('<path d="M7 7l10 10M17 7 7 17"/>'),
   window: s('<rect x="3" y="5" width="14" height="12" rx="2"/><path d="M7 5V3.8A.8.8 0 0 1 7.8 3H20a1 1 0 0 1 1 1v10.2a.8.8 0 0 1-.8.8H17"/>'),
+  // 도구 줄 위치 옮기기: 왼쪽으로(|←) / 오른쪽으로(→|)
+  toLeft: s('<path d="M4 5v14"/><path d="M20 12H8"/><path d="m13 7-5 5 5 5"/>'),
+  toRight: s('<path d="M20 5v14"/><path d="M4 12h12"/><path d="m11 7 5 5-5 5"/>'),
   up: s('<path d="m6 15 6-6 6 6"/>'),
   down: s('<path d="m6 9 6 6 6-6"/>'),
   plus: s('<path d="M12 5v14M5 12h14"/>'),

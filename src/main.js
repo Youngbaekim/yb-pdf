@@ -14,7 +14,7 @@ import { PALETTE, swatches, bindSwatches, toast, openSignPad, getSigns, deleteSi
 import { FONT_LABEL } from './pdfwrite.js';
 import './overlay.js';
 
-const VERSION = 'v0.3.0';
+const VERSION = 'v0.3.1';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const app = $('#app');
@@ -184,6 +184,22 @@ function setSpread(n) {
 }
 $('#btn-spread').innerHTML = S.spread === 2 ? ICONS.spread2 : ICONS.spread1;
 
+/* ───────── 도구 줄 위치: 오른쪽(기본) ↔ 맨 왼쪽 ───────── */
+let railSide = pref('rail', 'right');
+function applyRail() {
+  app.dataset.rail = railSide;
+  const b = $('#btn-rail-side');
+  b.innerHTML = railSide === 'left' ? ICONS.toRight : ICONS.toLeft;
+  b.title = railSide === 'left' ? '도구 줄을 오른쪽으로 옮기기' : '도구 줄을 맨 왼쪽으로 옮기기';
+}
+function toggleRail() {
+  railSide = railSide === 'left' ? 'right' : 'left';
+  setPref('rail', railSide);
+  applyRail();
+  requestAnimationFrame(() => V.refit());
+}
+applyRail();
+
 /* ───────── 줄 단추(rail) ───────── */
 $('#rail').addEventListener('click', (e) => {
   const b = e.target.closest('.rail-btn');
@@ -204,6 +220,7 @@ function runCmd(c) {
   if (c === 'redo') return A.redo();
   if (c === 'spread') return setSpread(S.spread === 2 ? 1 : 2);
   if (c === 'panel') return togglePanel();
+  if (c === 'rail-side') return toggleRail();
   if (c === 'merge') return openMerge();
   if (c === 'print') return printDoc();
 }
