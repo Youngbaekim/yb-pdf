@@ -57,14 +57,18 @@ export function redrawPage(i) {
   const el = pageEl(i);
   if (!el) return;
   const p = S.pages[i];
-  const svg = el.querySelector('svg.ov');
   const w = p.vp.width, h = p.vp.height;
-  svg.setAttribute('width', w);
-  svg.setAttribute('height', h);
-  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
   const t = p.vp.transform;
-  const body = S.annots.filter((a) => a.page === i).map(annotSvg).join('');
-  svg.innerHTML = `<g transform="matrix(${t.join(' ')})">${body}<g class="live"></g></g>`;
+  const mine = S.annots.filter((a) => a.page === i);
+  // 형광펜(글자 칠하기·자유 형광펜)은 글자 아래 층에 '곱하기'로 칠함 → 글자가 형광펜에 덮이지 않고 또렷하게 보임
+  const under = (a) => a.type === 'highlight' || (a.type === 'ink' && a.marker);
+  for (const [sel, list] of [['svg.hl', mine.filter(under)], ['svg.ov', mine.filter((a) => !under(a))]]) {
+    const svg = el.querySelector(sel);
+    svg.setAttribute('width', w);
+    svg.setAttribute('height', h);
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.innerHTML = `<g transform="matrix(${t.join(' ')})">${list.map(annotSvg).join('')}<g class="live"></g></g>`;
+  }
   drawSelection(i);
 }
 
@@ -73,11 +77,11 @@ export function redrawAll() {
 }
 
 /** 그리는 중인 획 미리 보기 */
-export function liveLayer(i) {
-  return pageEl(i)?.querySelector('svg.ov g.live');
+export function liveLayer(i, under = false) {
+  return pageEl(i)?.querySelector(`svg.${under ? 'hl' : 'ov'} g.live`);
 }
-export function setLive(i, html) {
-  const g = liveLayer(i);
+export function setLive(i, html, under = false) {
+  const g = liveLayer(i, under);
   if (g) g.innerHTML = html;
 }
 

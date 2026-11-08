@@ -78,6 +78,13 @@ function showDoc(view) {
   emit('tabs');
 }
 
+/** + 단추: 빈 탭(시작 화면)을 열어 보임. 지금 탭이 이미 비어 있으면 그대로 */
+export function openBlankTab() {
+  if (active() && !S.pdf) return;
+  newTab();
+  showDoc(null);
+}
+
 export function activate(id) {
   if (id === activeId) return;
   const t = tabs.find((x) => x.id === id);
@@ -95,7 +102,7 @@ export async function closeTab(id, { force = false } = {}) {
   if (!t) return false;
   if (!force && docOf(t).dirty) {
     activate(id);
-    const r = await confirmBox(`'${S.fileName}'의 변경 내용을 저장하지 않았습니다.\n저장할까요?`, { ok: '저장', cancel: '취소', third: '저장 안 함' });
+    const r = await confirmBox(`'${S.fileName}'의 변경 내용을 저장하지 않았습니다.`, { ok: '저장하고 닫기', cancel: '취소', third: '저장하지 않고 닫기' });
     if (!r) return false;
     if (r === 'ok') {
       const { save } = await import('./fileio.js');
@@ -131,6 +138,17 @@ export async function findTab(handle) {
     try { if (h && (await h.isSameEntry(handle))) return t; } catch { /* 무시 */ }
   }
   return null;
+}
+
+/** 저장하지 않은 탭을 차례로 저장 (하나라도 취소·실패하면 false) */
+export async function saveAll() {
+  const { save } = await import('./fileio.js');
+  for (const t of tabs.slice()) {
+    if (!docOf(t).dirty) continue;
+    activate(t.id);
+    if (!(await save())) return false;
+  }
+  return true;
 }
 
 /* ───────── 창 사이 이동 ───────── */

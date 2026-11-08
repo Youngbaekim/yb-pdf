@@ -47,8 +47,10 @@ export function toast(msg, ms = 2600) {
 
 export function confirmBox(msg, { ok = '확인', cancel = '취소', third } = {}) {
   const d = makeDialog('dlg-confirm', `<form method="dialog"><p class="msg">${esc(msg).replace(/\n/g, '<br>')}</p>
-    <div class="dlg-foot">${third ? `<button type="button" class="btn" data-v="third">${esc(third)}</button><span class="sp"></span>` : '<span class="sp"></span>'}
-    <button type="button" class="btn" data-v="cancel">${esc(cancel)}</button><button type="button" class="btn btn-primary" data-v="ok">${esc(ok)}</button></div></form>`);
+    ${third
+      // 세 갈래 선택은 위에서 아래로: [확인(주)] [세 번째] [취소]
+      ? `<div class="dlg-stack"><button type="button" class="btn btn-primary" data-v="ok">${esc(ok)}</button><button type="button" class="btn" data-v="third">${esc(third)}</button><button type="button" class="btn" data-v="cancel">${esc(cancel)}</button></div>`
+      : `<div class="dlg-foot"><span class="sp"></span><button type="button" class="btn" data-v="cancel">${esc(cancel)}</button><button type="button" class="btn btn-primary" data-v="ok">${esc(ok)}</button></div>`}</form>`);
   return run(d, (finish) => {
     d.querySelectorAll('[data-v]').forEach((b) => b.addEventListener('click', () => finish(b.dataset.v === 'cancel' ? null : b.dataset.v)));
     setTimeout(() => d.querySelector('[data-v="ok"]').focus(), 0);

@@ -14,7 +14,7 @@ import { PALETTE, swatches, bindSwatches, toast, openSignPad, getSigns, deleteSi
 import { FONT_LABEL } from './pdfwrite.js';
 import './overlay.js';
 
-const VERSION = 'v0.3.1';
+const VERSION = 'v0.4.0';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const app = $('#app');
@@ -383,7 +383,7 @@ async function renderFileTab() {
       <button class="fbtn" data-cmd="open">${ICONS.open}<span>열기</span><kbd>Ctrl+O</kbd></button>
       <button class="fbtn" data-cmd="save" ${S.pdf ? '' : 'disabled'}>${ICONS.save}<span>저장 (덮어쓰기)</span><kbd>Ctrl+S</kbd></button>
       <button class="fbtn" data-cmd="saveas" ${S.pdf ? '' : 'disabled'}>${ICONS.save}<span>다른 이름으로 저장</span><kbd>Ctrl+Shift+S</kbd></button>
-      <button class="fbtn" data-cmd="merge">${ICONS.spread2}<span>PDF 병합</span></button>
+      <button class="fbtn" data-cmd="merge">${ICONS.spread2}<span>PDF 합치기</span></button>
       <button class="fbtn" data-cmd="print" ${S.pdf ? '' : 'disabled'}>${ICONS.text}<span>인쇄 (브라우저 PDF 창)</span><kbd>Ctrl+P</kbd></button>
     </div>
     <label class="chk"><input type="checkbox" id="chk-newwin" ${pref('newWindow', false) ? 'checked' : ''}> 새 PDF는 새 창으로 열기 <span class="hint">(끄면 위쪽 탭으로 열림)</span></label>
@@ -424,7 +424,8 @@ on('recent', () => { if (tab === 'file') renderFileTab(); renderRecentEmpty(); }
 /* 첫 화면의 최근 파일 */
 async function renderRecentEmpty() {
   const list = await recentList();
-  $('#recent-empty').innerHTML = list.length ? `<h4>최근 파일</h4>${list.slice(0, 6).map((r) => `<button class="rc-open" data-name="${esc(r.name)}">📄 ${esc(r.name)}</button>`).join('')}` : '';
+  const when = (t) => new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  $('#recent-empty').innerHTML = list.length ? `<h4>최근 PDF</h4>${list.slice(0, 10).map((r) => `<button class="rc-open" data-name="${esc(r.name)}" title="${esc(r.handle?.__path || r.name)}"><svg class="rc-ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg><span class="rc-nm">${esc(r.name)}</span><small>${when(r.at)}</small></button>`).join('')}` : '';
 }
 $('#recent-empty').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-name]');
@@ -479,6 +480,11 @@ viewer.addEventListener('scroll', () => {
 let resizeTimer = 0;
 new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => V.refit(), 120); }).observe(viewer);
 
+// 데스크톱 앱: 창을 닫을 때 [저장하고 닫기]를 고르면 모두 저장한 뒤 닫음
+window.ybpdfNative?.onSaveAllClose?.(async () => {
+  if (await D.saveAll()) window.ybpdfNative.forceClose();
+  else toast('저장을 취소하여 창을 닫지 않았습니다.');
+});
 window.addEventListener('beforeunload', (e) => {
   rememberPage();
   if (anyDirty()) { e.preventDefault(); e.returnValue = ''; }
@@ -486,7 +492,7 @@ window.addEventListener('beforeunload', (e) => {
 
 /* ───────── 문서 탭 ───────── */
 on('before-switch', rememberPage);
-$('#btn-new-tab').addEventListener('click', () => pickAndOpen());
+$('#btn-new-tab').addEventListener('click', () => { D.openBlankTab(); renderRecentEmpty(); }); // 빈 탭(시작 화면)
 // 다른 창에서 옮겨 온 탭 (끌어 놓기·새 창으로 옮기기)
 on('handoff', (v) => openBytes(v.bytes, v.name, v.handle || null, { dirty: v.dirty, annots: v.prepared ? v.annots : undefined, current: v.current, index: v.index, here: true }));
 async function startHandoff() {

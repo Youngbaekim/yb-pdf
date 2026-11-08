@@ -79,7 +79,7 @@ export function buildDom() {
       const el = document.createElement('div');
       el.className = 'page';
       el.dataset.i = i;
-      el.innerHTML = `<canvas class="pg"></canvas><div class="textLayer"></div><svg class="ov" xmlns="http://www.w3.org/2000/svg"></svg><div class="ui"></div><span class="pno">${i + 1}</span>`;
+      el.innerHTML = `<canvas class="pg"></canvas><svg class="hl" xmlns="http://www.w3.org/2000/svg"></svg><div class="textLayer"></div><svg class="ov" xmlns="http://www.w3.org/2000/svg"></svg><div class="ui"></div><span class="pno">${i + 1}</span>`;
       els[i] = el;
       row.appendChild(el);
     }

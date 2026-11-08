@@ -218,6 +218,28 @@ export async function save({ as = false } = {}) {
   }
 }
 
+/** 새 파일로 저장 (저장 위치·이름을 묻고 씀). @returns {Promise<{name:string, handle:any}|null>} */
+export async function saveBytesAs(bytes, suggestedName) {
+  let handle = null;
+  if (native) {
+    handle = await nativeSaveDialog(suggestedName, S.fileHandle);
+    if (!handle) return null;
+  } else if ('showSaveFilePicker' in window) {
+    try {
+      handle = await window.showSaveFilePicker({ suggestedName, types: PDF_TYPE, id: 'ybpdf-save' });
+    } catch { return null; }
+  }
+  if (handle) {
+    const w = await handle.createWritable();
+    await w.write(bytes);
+    await w.close();
+    remember(handle);
+    return { name: handle.name, handle };
+  }
+  download(bytes, suggestedName);
+  return { name: suggestedName, handle: null };
+}
+
 export function download(bytes, name) {
   const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
   const a = document.createElement('a');

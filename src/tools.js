@@ -171,7 +171,7 @@ function onUp(e) {
 }
 function onCancel(e) {
   if (!drag || (drag.pid != null && e.pointerId !== drag.pid)) return;
-  if (drag.kind === 'ink') setLive(drag.i, '');
+  if (drag.kind === 'ink') setLive(drag.i, '', drag.marker);
   if ((drag.kind === 'move' || drag.kind === 'resize') && drag.moved) A.commitFrom(drag.prev);
   if (drag.kind === 'erase' && drag.removed.size) A.commitFrom(drag.prev);
   drag = null;
@@ -247,10 +247,10 @@ function drawLiveInk() {
   const d = drag;
   const poly = strokeOutline(d.pts, d.width, d.marker);
   const blend = d.marker ? 'mix-blend-mode:multiply' : '';
-  setLive(d.i, `<path d="${pathFromOutline(poly)}" fill="${d.color}" fill-opacity="${d.opacity}" style="${blend}"/>`);
+  setLive(d.i, `<path d="${pathFromOutline(poly)}" fill="${d.color}" fill-opacity="${d.opacity}" style="${blend}"/>`, d.marker);
 }
 function finishInk(d) {
-  setLive(d.i, '');
+  setLive(d.i, '', d.marker);
   if (d.pts.length === 1) d.pts.push([d.pts[0][0] + 0.01, d.pts[0][1], d.pts[0][2]]); // 점 하나도 찍히게
   const round = (p) => [Math.round(p[0] * 100) / 100, Math.round(p[1] * 100) / 100, Math.round(p[2] * 100) / 100];
   const pts = d.pts.map(round);

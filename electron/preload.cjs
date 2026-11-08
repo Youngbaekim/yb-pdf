@@ -11,4 +11,6 @@ contextBridge.exposeInMainWorld('ybpdfNative', {
   version: () => ipcRenderer.invoke('version'),
   pathOf: (file) => { try { return webUtils.getPathForFile(file) || ''; } catch { return ''; } },
   onOpen: (cb) => ipcRenderer.on('open-paths', (_e, paths) => cb(paths)),
+  onSaveAllClose: (cb) => ipcRenderer.on('save-all-close', () => cb()),
+  forceClose: () => ipcRenderer.invoke('force-close'),
 });

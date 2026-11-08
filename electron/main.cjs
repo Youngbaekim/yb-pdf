@@ -58,12 +58,15 @@ function setupWindow(win, { remember } = {}) {
   });
   win.webContents.on('did-create-window', (child) => setupWindow(child));
   // 저장하지 않은 문서가 있을 때 닫기 확인 (웹의 beforeunload를 대신 처리)
+  // [저장하고 닫기] → 화면에 '모두 저장' 요청, 다 저장되면 화면이 창을 닫음
   win.webContents.on('will-prevent-unload', (e) => {
+    if (win.__forceClose) { e.preventDefault(); return; }
     const r = dialog.showMessageBoxSync(win, {
-      type: 'warning', buttons: ['닫기', '취소'], defaultId: 1, cancelId: 1, title: 'YB-PDF',
-      message: '저장하지 않은 변경 내용이 있습니다.', detail: '저장하지 않고 창을 닫을까요?',
+      type: 'warning', buttons: ['저장하고 닫기', '저장하지 않고 닫기', '취소'], defaultId: 0, cancelId: 2, noLink: true, title: 'YB-PDF',
+      message: '저장하지 않은 문서가 있습니다.', detail: '변경 내용을 저장한 뒤 닫을까요?',
     });
-    if (r === 0) e.preventDefault();
+    if (r === 1) e.preventDefault(); // 닫기 진행
+    if (r === 0) win.webContents.send('save-all-close'); // 닫기는 일단 멈추고 저장부터
   });
   if (remember) win.on('close', () => saveBounds(win));
 }
@@ -115,6 +118,10 @@ ipcMain.handle('save-dialog', async (e, name, dir) => {
 });
 ipcMain.handle('exists', (_e, p) => fs.existsSync(p));
 ipcMain.handle('version', () => app.getVersion());
+ipcMain.handle('force-close', (e) => {
+  const win = BrowserWindow.fromWebContents(e.sender);
+  if (win) { win.__forceClose = true; win.close(); }
+});
 
 /* ───────── 시작 ───────── */
 app.whenReady().then(() => {

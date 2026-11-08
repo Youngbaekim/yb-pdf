@@ -20,7 +20,7 @@
       <img class="brand-icon" src="icons/icon.svg" alt="YB-PDF" width="22" height="22" />
       <div class="tabstrip">
         <div class="doc-tabs" id="doc-tabs" role="tablist" aria-label="열린 문서"></div>
-        <button class="icon-btn new-tab" id="btn-new-tab" title="새 탭에서 PDF 열기 (Ctrl+O)" data-icon="plus"></button>
+        <button class="icon-btn new-tab" id="btn-new-tab" title="새 탭" data-icon="plus"></button>
       </div>
       <div class="pager" id="pager" hidden>
         <button class="icon-btn" id="btn-prev" title="이전 쪽 (PageUp)" data-icon="up"></button>
@@ -58,12 +58,17 @@
     <!-- 문서 -->
     <main id="viewer" class="viewer" tabindex="-1">
       <div id="pages" class="pages"></div>
+      <!-- 시작 화면 (빈 탭): 맨 위 '폴더에서 열기' 아이콘, 그 아래 최근 PDF -->
       <section id="empty" class="empty-state">
-        <img src="icons/icon.svg" alt="" width="72" height="72" />
-        <h2>YB-PDF</h2>
-        <p>PDF 파일을 이 창에 끌어다 놓거나 열기를 누르세요.</p>
-        <button class="btn-primary big" id="btn-open-big">📂 PDF 열기 <kbd>Ctrl+O</kbd></button>
+        <button class="open-folder" id="btn-open-big" title="폴더에서 열기 (Ctrl+O)" aria-label="폴더에서 열기">
+          <svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">
+            <path d="M6 18a5 5 0 0 1 5-5h13l5 5h24a5 5 0 0 1 5 5v4H6Z" fill="#7FA6E8"/>
+            <path d="M6 24h52v25a5 5 0 0 1-5 5H11a5 5 0 0 1-5-5Z" fill="#2B4A80"/>
+            <path d="M6 28h52" stroke="#9CC0FF" stroke-width="2" opacity=".6"/>
+          </svg>
+        </button>
         <div class="recent" id="recent-empty"></div>
+        <p class="drop-hint">PDF를 이 창에 끌어다 놓아도 열립니다</p>
       </section>
       <div class="tab-drop-hint" id="tab-drop-hint" hidden></div>
       <div class="loading" id="loading" hidden><span class="spinner"></span><span id="loading-msg">여는 중…</span></div>
