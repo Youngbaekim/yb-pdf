@@ -167,7 +167,7 @@ kbd { font-family: var(--font); font-size: 11px; padding: 1px 5px; border: 1px s
 .app[data-rail='left'] { grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: 'top top top top' 'rail panel viewer find'; }
 
 /* 찾기 창 */
-.find { grid-area: find; width: 330px; display: flex; flex-direction: column; min-height: 0; background: var(--pane); border-left: 1px solid var(--line); }
+.find { grid-area: find; position: relative; width: var(--find-w, 330px); display: flex; flex-direction: column; min-height: 0; background: var(--pane); border-left: 1px solid var(--line); }
 .app:not([data-find='open']) .find { display: none; }
 .find-head { display: flex; align-items: center; gap: 6px; padding: 10px 8px 8px 12px; color: var(--accent); }
 .find-head input { flex: 1; min-width: 0; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 18px; background: var(--bg); font-size: 14px; outline: none; color: var(--ink); }
@@ -190,6 +190,14 @@ kbd { font-family: var(--font); font-size: 11px; padding: 1px 5px; border: 1px s
 .panel-resizer { position: absolute; top: 0; bottom: 0; right: -4px; width: 8px; z-index: 6; cursor: col-resize; touch-action: none; }
 .panel-resizer::after { content: ''; position: absolute; top: 0; bottom: 0; left: 3px; width: 2px; background: transparent; transition: background .15s; }
 .panel-resizer:hover::after, .panel-resizer.on::after { background: var(--accent); }
+/* 찾기 창 너비 손잡이 (왼쪽 가장자리): 가운데 세로 막대가 늘 보이고, 올리면 강조색 */
+.find-resizer { position: absolute; top: 0; bottom: 0; left: -5px; width: 10px; z-index: 6; cursor: col-resize; touch-action: none; }
+.find-resizer::after { content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px; background: transparent; transition: background .15s; }
+.find-resizer::before { content: ''; position: absolute; top: 50%; left: 2px; width: 6px; height: 44px; transform: translateY(-50%); border-radius: 3px; background: var(--line); box-shadow: 0 0 0 1px var(--pane); transition: background .15s; }
+.find-resizer:hover::after, .find-resizer.on::after { background: var(--accent); }
+.find-resizer:hover::before, .find-resizer.on::before { background: var(--accent); }
+.panel-resizer::before { content: ''; position: absolute; top: 50%; left: 1px; width: 6px; height: 44px; transform: translateY(-50%); border-radius: 3px; background: var(--line); box-shadow: 0 0 0 1px var(--pane); transition: background .15s; }
+.panel-resizer:hover::before, .panel-resizer.on::before { background: var(--accent); }
 .tabs { display: flex; gap: 2px; padding: 8px 8px 0; border-bottom: 1px solid var(--line); flex: none; }
 .tab { flex: 1; padding: 8px 4px 9px; font-size: 13.5px; color: var(--soft); border-bottom: 2.5px solid transparent; margin-bottom: -1px; }
 .tab:hover { color: var(--ink); }
@@ -368,8 +376,9 @@ table.keys td:first-child { width: 52%; padding-right: 6px; }
   #btn-zoom-in, #btn-zoom-out { display: none; }
   .panel { position: absolute; left: 0; top: calc(var(--top-h) + env(safe-area-inset-top)); bottom: 0; width: min(var(--panel-w, 300px), calc(100vw - var(--rail-w) - 24px)); z-index: 25; box-shadow: 10px 0 30px rgba(0,0,0,.2); }
   .panel-resizer { display: none; }
-  .find { position: absolute; right: var(--rail-w); top: calc(var(--top-h) + env(safe-area-inset-top)); bottom: 0; width: min(330px, calc(100vw - var(--rail-w) - 16px)); z-index: 26; box-shadow: -10px 0 30px rgba(0,0,0,.2); }
+  .find { position: absolute; right: var(--rail-w); top: calc(var(--top-h) + env(safe-area-inset-top)); bottom: 0; width: min(var(--find-w, 330px), calc(100vw - var(--rail-w) - 16px)); z-index: 26; box-shadow: -10px 0 30px rgba(0,0,0,.2); }
   .app[data-rail='left'] .find { right: 0; }
+  .find-resizer { display: none; }
   .app[data-rail='left'] .panel { left: var(--rail-w); }
   .rail { gap: 0; }
   .rail-btn { width: 40px; height: 40px; }

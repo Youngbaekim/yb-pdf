@@ -15,7 +15,7 @@ import { FONT_LABEL } from './pdfwrite.js';
 import './overlay.js';
 import { initFind, openFind, closeFind, findOpen, findNext } from './find.js';
 
-const VERSION = 'v0.5.0';
+const VERSION = 'v0.5.1';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const app = $('#app');
@@ -66,6 +66,31 @@ $('#btn-panel').addEventListener('click', () => togglePanel());
     window.addEventListener('pointerup', up, { once: true });
   });
   rz.addEventListener('dblclick', () => { panelW = PANEL_DEF; setPref('panel-w', panelW); applyPanel(); V.refit(); });
+})();
+
+/* ───────── 찾기 창 너비: 왼쪽 가장자리 손잡이로 조절 (두 번 누르면 기본) ───────── */
+(() => {
+  const DEF = 330;
+  let w = pref('find-w', DEF);
+  const apply = () => app.style.setProperty('--find-w', `${w}px`);
+  apply();
+  const rz = $('#find-resizer');
+  let x0 = 0, w0 = 0;
+  const move = (e) => { w = Math.max(240, Math.min(720, w0 + (x0 - e.clientX))); apply(); };
+  const up = () => {
+    rz.classList.remove('on');
+    window.removeEventListener('pointermove', move);
+    setPref('find-w', w);
+    V.refit();
+  };
+  rz.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    x0 = e.clientX; w0 = w;
+    rz.classList.add('on');
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up, { once: true });
+  });
+  rz.addEventListener('dblclick', () => { w = DEF; setPref('find-w', w); apply(); V.refit(); });
 })();
 
 /* ───────── 탭 ───────── */
