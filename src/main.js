@@ -13,8 +13,9 @@ import { openMerge } from './merge.js';
 import { PALETTE, swatches, bindSwatches, toast, openSignPad, getSigns, deleteSign } from './dialogs.js';
 import { FONT_LABEL } from './pdfwrite.js';
 import './overlay.js';
+import { initFind, openFind, closeFind, findOpen, findNext } from './find.js';
 
-const VERSION = 'v0.4.0';
+const VERSION = 'v0.5.0';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const app = $('#app');
@@ -396,6 +397,7 @@ async function renderFileTab() {
       <tr><td><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd></td><td>실행 취소 / 다시 실행</td></tr>
       <tr><td><kbd>V H M P N T E S X</kbd></td><td>선택·손·형광펜·펜·메모·텍스트·수정·서명·지우개</td></tr>
       <tr><td><kbd>Ctrl</kbd>+휠, <kbd>Ctrl +/−/0</kbd></td><td>확대·축소 / 폭 맞춤</td></tr>
+      <tr><td><kbd>Ctrl+F</kbd>, <kbd>F3</kbd></td><td>찾기 (띄어쓰기 무시) / 다음 결과</td></tr>
       <tr><td><kbd>Ctrl+2</kbd></td><td>1쪽 / 2쪽 보기</td></tr>
       <tr><td><kbd>PageUp/Down</kbd>, <kbd>Home/End</kbd></td><td>쪽 이동</td></tr>
       <tr><td><kbd>Ctrl+\\</kbd></td><td>메뉴 접기·펼치기</td></tr>
@@ -445,6 +447,8 @@ window.addEventListener('keydown', (e) => {
   if (mod && k === 's') { e.preventDefault(); save({ as: e.shiftKey }); return; }
   if (mod && k === 'o') { e.preventDefault(); pickAndOpen(); return; }
   if (mod && k === 'p' && S.pdf) { e.preventDefault(); printDoc(); return; }
+  if (mod && k === 'f') { e.preventDefault(); openFind(); return; } // 찾기 (브라우저 찾기 대신)
+  if (k === 'f3') { e.preventDefault(); findNext(e.shiftKey); return; }
   if (mod && k === 'w' && active()) { e.preventDefault(); closeTab(active().id); return; } // 설치한 앱 창에서 동작
   if (typing) return;
   if (mod && k === 'z' && !e.shiftKey) { e.preventDefault(); A.undo(); return; }
@@ -506,6 +510,9 @@ async function startHandoff() {
 /* ───────── 시작 ───────── */
 initTools();
 initTabs();
+initFind();
+$('#btn-find').addEventListener('click', () => (findOpen() ? closeFind() : openFind()));
+on('find-toggle', () => { $('#btn-find').classList.toggle('on', findOpen()); requestAnimationFrame(() => V.refit()); });
 initDrop();
 startHandoff();
 setTool('select');

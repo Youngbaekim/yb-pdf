@@ -53,6 +53,10 @@ export function annotSvg(a) {
   }
 }
 
+/** 찾기 결과를 쪽에 표시하는 함수 (find.js가 등록) */
+let findMarks = () => '';
+export function setFindMarks(fn) { findMarks = fn || (() => ''); }
+
 export function redrawPage(i) {
   const el = pageEl(i);
   if (!el) return;
@@ -67,7 +71,8 @@ export function redrawPage(i) {
     svg.setAttribute('width', w);
     svg.setAttribute('height', h);
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
-    svg.innerHTML = `<g transform="matrix(${t.join(' ')})">${list.map(annotSvg).join('')}<g class="live"></g></g>`;
+    const extra = sel === 'svg.hl' ? findMarks(i) : ''; // 찾기 결과 표시(글자 아래)
+    svg.innerHTML = `<g transform="matrix(${t.join(' ')})">${extra}${list.map(annotSvg).join('')}<g class="live"></g></g>`;
   }
   drawSelection(i);
 }
