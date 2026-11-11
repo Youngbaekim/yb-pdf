@@ -1,6 +1,6 @@
 // YB-PDF 서비스 워커 — 인터넷이 없어도 앱이 열리도록 화면 파일을 기기에 보관
 // PDF 파일 자체는 다루지 않음 (모든 처리는 이 기기 안에서만)
-const VERSION = 'v0.5.1';
+const VERSION = 'v0.6.0';
 const SHELL = `ybpdf-shell-${VERSION}`;
 const ASSETS = 'ybpdf-assets-pdfjs6.5'; // pdf.js 판이 바뀌면 이름을 바꿔 보조 파일을 새로 받음 // 글꼴·pdf.js 보조 파일·이름에 해시가 붙은 빌드 파일 (내용이 바뀌지 않음)
 const SCOPE = self.registration.scope;
@@ -52,7 +52,7 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   const p = url.pathname.slice(new URL(SCOPE).pathname.length);
-  if (p.startsWith('assets/') || p.startsWith('fonts/') || p.startsWith('pdfjs/') || p.startsWith('wasm/')) return cacheFirst(ASSETS);
+  if (p.startsWith('assets/') || p.startsWith('fonts/') || p.startsWith('pdfjs/') || p.startsWith('wasm/') || p.startsWith('ocr/')) return cacheFirst(ASSETS);
   // 그 밖(아이콘·manifest): 보관본 먼저, 뒤에서 갱신
   e.respondWith(
     caches.open(SHELL).then(async (c) => {

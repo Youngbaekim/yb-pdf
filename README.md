@@ -14,12 +14,12 @@ npm run dev      # 개발 서버 실행 → 화면에 나오는 주소를 브라
 - 배포: `main` 브랜치에 올리면 GitHub Actions가 자동으로 GitHub Pages에 배포 (https://youngbaekim.github.io/yb-pdf/)
 - 새 버전 안내를 띄우려면 `public/sw.js`의 `VERSION`과 `src/main.js`의 `VERSION`을 함께 올린 뒤 배포
 
-## 기능 (v0.5.0)
+## 기능 (v0.6.0)
 
 | 구분 | 내용 |
 |---|---|
 | 열기·저장 | 열기(Ctrl+O)·끌어다 놓기·최근 파일, **Ctrl+S 같은 파일에 덮어쓰기**, 다른 이름으로 저장, 설치 앱에서 탐색기 '연결 프로그램' |
-| 찾기 | Ctrl+F → 오른쪽 찾기 창, 띄어쓰기·대소문자 무시, 결과마다 앞뒤 문맥 3줄, 누르면 그 위치로 이동해 강조, Enter·F3 다음 결과 |
+| 찾기 | Ctrl+F → 오른쪽 찾기 창, 띄어쓰기 무시·대소문자 무시 체크박스(기본 켬), 그림 속 글자(OCR: 찾지 않음/그림만 있는 쪽/모든 그림, 한글+영문, 인터넷 불필요), 결과마다 앞뒤 문맥 3줄, 누르면 그 위치로 이동해 강조, Enter·F3 다음 결과 |
 | 보기 | 1쪽 / 2쪽 보기, 2쪽 보기의 **표지 단독(공백) 켜기·끄기**, 폭·쪽 맞춤, 확대·축소(Ctrl+휠·두 손가락), 쪽 미리보기 |
 | 메뉴 | 왼쪽 접이식 패널(도구·쪽·주석·파일, 머리줄 왼쪽 스위치로 열고 닫기), 도구 줄(오른쪽 ↔ 맨 왼쪽 위치 전환), 너비 조절, 다크 모드 |
 | 여러 문서 | 두 번째 PDF부터 상단 탭으로 열기, 탭 끌어 순서 변경, 창 밖에 놓으면 새 창으로 분리, 다른 창의 탭 줄에 놓으면 그 창으로 이동, 오른쪽 클릭 메뉴(새 창으로 옮기기·닫기), 설정으로 '새 PDF는 새 창으로' |
@@ -49,10 +49,11 @@ npm run dev      # 개발 서버 실행 → 화면에 나오는 주소를 브라
 
 - 텍스트 수정은 원래 글자를 '덮고 새로 쓰는' 방식: 원래 글자는 파일 안에 남아 있음(검색·복사 시 나타날 수 있음)
 - 보안(암호화)이 설정된 PDF는 보기 전용
+- 그림 속 글자 인식(OCR)은 찾기에만 쓰이며 정확도가 완전하지 않음(색 바탕 위 작은 흰 글씨, 영문 'AI' 등은 틀리기 쉬움). 인식 결과는 문서(탭)를 열어 둔 동안만 보관 — 다시 열면 다시 인식
 - 저장 시 파일 전체를 다시 쓰므로, 전자서명(공인인증)이 들어 있는 PDF는 그 서명이 무효가 됨
 - 덮어쓰기 저장은 PC의 크롬·엣지에서 지원 (그 밖의 환경은 내려받기로 저장)
 
 ## 사용 라이브러리·글꼴
 
-Electron(MIT), electron-builder(MIT), resedit(MIT), pdf.js(Apache-2.0), pdf-lib(MIT), @pdf-lib/fontkit(MIT), HarfBuzz/harfbuzzjs(MIT), perfect-freehand(MIT), idb(ISC), Vite(MIT)
+tesseract.js(Apache-2.0)·Tesseract 인식 데이터(Apache-2.0), Electron(MIT), electron-builder(MIT), resedit(MIT), pdf.js(Apache-2.0), pdf-lib(MIT), @pdf-lib/fontkit(MIT), HarfBuzz/harfbuzzjs(MIT), perfect-freehand(MIT), idb(ISC), Vite(MIT)
 나눔고딕·나눔명조·나눔손글씨 펜 (SIL Open Font License 1.1, `public/fonts/OFL.txt`), Pretendard (SIL OFL 1.1, `public/fonts/Pretendard-LICENSE.txt`)

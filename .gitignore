@@ -8,3 +8,4 @@ test/*.ttf
 .DS_Store
 Thumbs.db
 release
+public/ocr

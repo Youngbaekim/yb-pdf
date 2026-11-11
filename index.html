@@ -80,8 +80,14 @@
       <div class="find-resizer" id="find-resizer" title="끌어서 너비 조절 · 두 번 누르면 기본 너비"></div>
       <div class="find-head">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-        <input id="find-input" type="search" placeholder="찾을 낱말·구절 (띄어쓰기 무시)" autocomplete="off" spellcheck="false" />
+        <input id="find-input" type="search" placeholder="찾을 낱말·구절" autocomplete="off" spellcheck="false" />
         <button class="icon-btn" id="find-close" title="닫기 (Esc)">✕</button>
+      </div>
+      <div class="find-opts">
+        <label><input type="checkbox" id="find-opt-space" checked> 띄어쓰기 무시</label>
+        <label><input type="checkbox" id="find-opt-case" checked> 대소문자 무시</label>
+        <label class="ocr-opt" title="그림으로 된 글자를 인식(OCR)해서 함께 찾습니다. 처음 인식할 때 쪽마다 몇 초씩 걸리고, 인식 결과는 틀릴 수 있습니다.">그림 속 글자
+          <select id="find-ocr"><option value="off">찾지 않음</option><option value="blank">그림만 있는 쪽</option><option value="all">모든 그림</option></select></label>
       </div>
       <div class="find-bar"><span id="find-stat"></span><span class="sp"></span><span id="find-pos"></span>
         <button class="icon-btn" id="find-prev" title="이전 (Shift+Enter)" data-icon="up"></button><button class="icon-btn" id="find-next" title="다음 (Enter · F3)" data-icon="down"></button></div>

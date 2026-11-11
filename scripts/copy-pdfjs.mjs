@@ -11,4 +11,12 @@ for (const d of ['cmaps', 'standard_fonts', 'wasm', 'iccs']) {
 }
 mkdirSync(to('wasm'), { recursive: true });
 cpSync(from('harfbuzzjs/dist/harfbuzz-subset.wasm'), to('wasm/harfbuzz-subset.wasm'));
-console.log('pdf.js 보조 파일 복사 완료');
+// 글자 인식(OCR, tesseract.js): 작업자·엔진(wasm)·한글/영문 인식 데이터 — 인터넷 없이 쓰도록 앱에 포함
+mkdirSync(to('ocr'), { recursive: true });
+cpSync(from('tesseract.js/dist/worker.min.js'), to('ocr/worker.min.js'));
+for (const f of ['tesseract-core-lstm.wasm.js', 'tesseract-core-simd-lstm.wasm.js', 'tesseract-core-relaxedsimd-lstm.wasm.js']) {
+  cpSync(from(`tesseract.js-core/${f}`), to(`ocr/${f}`));
+}
+cpSync(from('@tesseract.js-data/kor/4.0.0_best_int/kor.traineddata.gz'), to('ocr/kor.traineddata.gz'));
+cpSync(from('@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz'), to('ocr/eng.traineddata.gz'));
+console.log('pdf.js·OCR 보조 파일 복사 완료');
