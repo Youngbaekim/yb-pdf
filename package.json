@@ -7,7 +7,7 @@
     "preview": "vite preview",
     "postinstall": "node scripts/copy-pdfjs.mjs",
     "app": "vite build && electron .",
-    "dist": "vite build && electron-builder --win nsis --x64"
+    "dist": "vite build && electron-builder --win nsis --x64 && node scripts/release.mjs"
   },
   "devDependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
