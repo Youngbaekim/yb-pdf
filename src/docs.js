@@ -9,7 +9,7 @@ import { toast, confirmBox } from './dialogs.js';
 import { ICONS } from './icons.js';
 import { storable, revive } from './native.js';
 
-const KEYS = ['pdf', 'pages', 'fileName', 'fileHandle', 'fileSize', 'cleanBytes', 'readOnly', 'readOnlyReason', 'dirty', 'annots', 'selected', 'current'];
+const KEYS = ['pdf', 'pages', 'fileName', 'fileHandle', 'fileSize', 'cleanBytes', 'readOnly', 'readOnlyReason', 'dirty', 'annots', 'selected', 'current', 'dirHint'];
 const TAB_MIME = 'application/x-ybpdf-tab';
 export const WIN = uid(); // 이 창의 고유 번호
 const OPENED_BY_APP = new URLSearchParams(location.search).has('handoff');
@@ -21,7 +21,7 @@ let activeId = null;
 
 const blank = () => ({
   pdf: null, pages: [], fileName: '', fileHandle: null, fileSize: 0, cleanBytes: null,
-  readOnly: false, readOnlyReason: '', dirty: false, annots: [], selected: null, current: 0,
+  readOnly: false, readOnlyReason: '', dirty: false, annots: [], selected: null, current: 0, dirHint: null,
   hist: { undo: [], redo: [] }, view: null,
 });
 const viewer = () => document.getElementById('viewer');
@@ -172,7 +172,7 @@ export async function takeHandoff(key) {
 }
 function payloadOf(t) {
   const d = docOf(t);
-  return { name: d.fileName, handle: d.fileHandle, bytes: d.cleanBytes, annots: d.annots, dirty: d.dirty, current: d.current, prepared: true };
+  return { name: d.fileName, handle: d.fileHandle, bytes: d.cleanBytes, annots: d.annots, dirty: d.dirty, current: d.current, dirHint: d.dirHint, prepared: true };
 }
 
 function openWindow(key, at) {

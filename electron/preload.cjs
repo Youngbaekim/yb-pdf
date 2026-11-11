@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('ybpdfNative', {
   read: (p) => ipcRenderer.invoke('read', p),
   write: (p, bytes) => ipcRenderer.invoke('write', p, bytes),
   exists: (p) => ipcRenderer.invoke('exists', p),
+  htmlToPdf: (p) => ipcRenderer.invoke('html-to-pdf', p),
   openDialog: () => ipcRenderer.invoke('open-dialog'),
   saveDialog: (name, dir) => ipcRenderer.invoke('save-dialog', name, dir),
   pending: () => ipcRenderer.invoke('pending'),

@@ -72,7 +72,34 @@ export async function pickAndOpen() {
   inp.click();
 }
 
+const isHtml = (name) => /\.html?$/i.test(name || '');
+
+/** HTML → PDF로 바꿔 새 탭에 열기 (Windows 설치판 전용) */
+export async function openHtml(path, name) {
+  if (!native?.htmlToPdf) { toast('HTML 열기는 Windows 설치판에서만 지원합니다.', 3500); return; }
+  emit('loading', true);
+  let bytes;
+  try {
+    bytes = await native.htmlToPdf(path);
+  } catch (e) {
+    console.error(e);
+    toast(`HTML을 PDF로 바꾸지 못했습니다: ${String(e?.message || e).replace(/^Error invoking remote method '[^']+': (Error: )?/, '')}`, 5000);
+    return;
+  } finally {
+    emit('loading', false);
+  }
+  const pdfName = name.replace(/\.html?$/i, '.pdf');
+  // 처음엔 '저장 안 된 새 PDF' — Ctrl+S 하면 HTML과 같은 폴더를 기본 위치로 물어봄 (원본 HTML은 그대로)
+  await openBytes(bytes, pdfName, null, { dirty: true, here: true, dirHint: path });
+  toast(`HTML을 PDF로 바꿔 열었습니다 · 저장하려면 Ctrl+S`, 3500);
+}
+
 export async function openHandle(handle) {
+  if (isHtml(handle.name)) {
+    if (handle.__path) return openHtml(handle.__path, handle.name);
+    toast('HTML 열기는 Windows 설치판에서만 지원합니다.', 3500);
+    return;
+  }
   // 이미 열려 있으면 그 탭으로
   const same = await findTab(handle);
   if (same) { activate(same.id); return; }
@@ -137,6 +164,7 @@ export async function openBytes(bytes, name, handle = null, o = {}) {
     S.readOnly = !!(imp.encrypted || imp.broken);
     S.readOnlyReason = imp.encrypted ? '보안(암호화)이 설정된 PDF는 보기만 할 수 있습니다.' : imp.broken ? '이 PDF는 구조가 특이하여 편집 저장을 지원하지 않습니다(보기 전용).' : '';
     S.dirty = !!o.dirty;
+    S.dirHint = o.dirHint || null;
     S.current = 0;
     resetHistory(o.annots || imp.annots);
     await setupPages();
@@ -185,7 +213,7 @@ export async function save({ as = false } = {}) {
     let handle = as ? null : S.fileHandle;
     if (handle && !(await permitted(handle))) handle = null;
     if (!handle && native) {
-      handle = await nativeSaveDialog(S.fileName || '문서.pdf', S.fileHandle);
+      handle = await nativeSaveDialog(S.fileName || '문서.pdf', S.fileHandle || (S.dirHint ? { __path: S.dirHint } : null));
       if (!handle) return false; // 취소
     } else if (!handle && canPick && 'showSaveFilePicker' in window) {
       try {
@@ -281,8 +309,12 @@ export function initDrop() {
     const got = items.map((item) => ({ hp: item.getAsFileSystemHandle ? item.getAsFileSystemHandle() : null, file: item.getAsFile() }));
     let skipped = 0;
     for (const { hp, file } of got) {
-      if (!/\.pdf$/i.test(file?.name || '') && file?.type !== 'application/pdf') { skipped++; continue; }
       const p = native?.pathOf(file);
+      if (isHtml(file?.name)) { // HTML: 설치판에서는 PDF로 바꿔 열기
+        if (p) await openHtml(p, file.name); else toast('HTML 열기는 Windows 설치판에서만 지원합니다.', 3500);
+        continue;
+      }
+      if (!/\.pdf$/i.test(file?.name || '') && file?.type !== 'application/pdf') { skipped++; continue; }
       if (p) { await openHandle(pathHandle(p)); continue; } // 데스크톱 앱: 파일 경로로 열어 그대로 덮어쓰기
       let handle = null;
       try { handle = hp ? await hp : null; } catch { handle = null; }

@@ -15,7 +15,7 @@ import { FONT_LABEL } from './pdfwrite.js';
 import './overlay.js';
 import { initFind, openFind, closeFind, findOpen, findNext } from './find.js';
 
-const VERSION = 'v0.6.0';
+const VERSION = 'v0.7.0';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const app = $('#app');
@@ -523,7 +523,7 @@ window.addEventListener('beforeunload', (e) => {
 on('before-switch', rememberPage);
 $('#btn-new-tab').addEventListener('click', () => { D.openBlankTab(); renderRecentEmpty(); }); // 빈 탭(시작 화면)
 // 다른 창에서 옮겨 온 탭 (끌어 놓기·새 창으로 옮기기)
-on('handoff', (v) => openBytes(v.bytes, v.name, v.handle || null, { dirty: v.dirty, annots: v.prepared ? v.annots : undefined, current: v.current, index: v.index, here: true }));
+on('handoff', (v) => openBytes(v.bytes, v.name, v.handle || null, { dirty: v.dirty, annots: v.prepared ? v.annots : undefined, current: v.current, index: v.index, here: true, dirHint: v.dirHint }));
 async function startHandoff() {
   const key = new URLSearchParams(location.search).get('handoff');
   if (!key) return;

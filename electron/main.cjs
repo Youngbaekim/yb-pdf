@@ -15,7 +15,7 @@ protocol.registerSchemesAsPrivileged([
 if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
 
 /* ───────── 실행 인수의 PDF 경로 ───────── */
-const pdfArgs = (argv) => argv.slice(1).filter((a) => /\.pdf$/i.test(a) && fs.existsSync(a)).map((a) => path.resolve(a));
+const pdfArgs = (argv) => argv.slice(1).filter((a) => /\.(pdf|html?)$/i.test(a) && fs.existsSync(a)).map((a) => path.resolve(a));
 let pending = pdfArgs(process.argv);
 let lastFocused = null;
 
@@ -105,7 +105,8 @@ ipcMain.handle('write', async (_e, p, bytes) => {
 });
 ipcMain.handle('open-dialog', async (e) => {
   const r = await dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender), {
-    title: 'PDF 열기', properties: ['openFile', 'multiSelections'], filters: [{ name: 'PDF 문서', extensions: ['pdf'] }],
+    title: 'PDF 열기', properties: ['openFile', 'multiSelections'],
+    filters: [{ name: 'PDF·HTML 문서', extensions: ['pdf', 'html', 'htm'] }, { name: 'PDF 문서', extensions: ['pdf'] }, { name: 'HTML 문서 (PDF로 변환해 열기)', extensions: ['html', 'htm'] }],
   });
   return r.canceled ? [] : r.filePaths;
 });
@@ -117,6 +118,39 @@ ipcMain.handle('save-dialog', async (e, name, dir) => {
   return /\.pdf$/i.test(r.filePath) ? r.filePath : `${r.filePath}.pdf`;
 });
 ipcMain.handle('exists', (_e, p) => fs.existsSync(p));
+
+/* ───────── HTML → PDF 변환 (크롬 엔진의 'PDF로 인쇄'와 같음) ─────────
+   받은 HTML의 스크립트가 PC 파일·앱 기능에 접근하지 못하도록, 앱과 분리된 숨은 창(다리 없음, 샌드박스)에서 변환 */
+ipcMain.handle('html-to-pdf', async (_e, file) => {
+  const win = new BrowserWindow({
+    show: false, width: 1200, height: 1600,
+    webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false, javascript: true, spellcheck: false, partition: 'ybpdf-html' },
+  });
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' })); // 새 창 열기 막기
+  win.webContents.on('will-navigate', (ev) => ev.preventDefault()); // 다른 주소로 이동 막기
+  try {
+    await Promise.race([
+      win.loadFile(file),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('HTML을 불러오는 데 시간이 너무 오래 걸립니다(30초).')), 30000)),
+    ]);
+    // 글꼴·그림·스크립트(차트 등)가 다 그려질 때까지 잠시 기다림
+    await win.webContents.executeJavaScript(`Promise.race([
+      Promise.all([document.fonts ? document.fonts.ready : 0, ...[...document.images].filter((i) => !i.complete).map((i) => new Promise((r) => { i.onload = i.onerror = r; }))]),
+      new Promise((r) => setTimeout(r, 8000))
+    ]).then(() => new Promise((r) => setTimeout(r, 400)))`, true);
+    const pdf = await win.webContents.printToPDF({
+      printBackground: true, // 배경색·표 색 그대로
+      preferCSSPageSize: true, // HTML의 @page 크기(A4 등)를 따름
+      pageSize: 'A4',
+      margins: { marginType: 'default' },
+      generateDocumentOutline: true,
+      generateTaggedPDF: true,
+    });
+    return new Uint8Array(pdf.buffer, pdf.byteOffset, pdf.byteLength);
+  } finally {
+    if (!win.isDestroyed()) win.destroy();
+  }
+});
 ipcMain.handle('version', () => app.getVersion());
 ipcMain.handle('force-close', (e) => {
   const win = BrowserWindow.fromWebContents(e.sender);
