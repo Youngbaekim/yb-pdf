@@ -15,7 +15,7 @@ import { FONT_LABEL } from './pdfwrite.js';
 import './overlay.js';
 import { initFind, openFind, closeFind, findOpen, findNext } from './find.js';
 
-const VERSION = 'v0.7.0';
+const VERSION = 'v0.7.1';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const app = $('#app');

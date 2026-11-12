@@ -57,6 +57,31 @@ export function confirmBox(msg, { ok = '확인', cancel = '취소', third } = {}
   });
 }
 
+/* ───────── 암호 입력 ───────── */
+/** @returns {Promise<string|null>} 입력한 암호 (취소하면 null) */
+export function passwordBox(fileName, wrong) {
+  const d = makeDialog('dlg-pw', `<form method="dialog">
+    <h3>🔒 암호가 걸린 PDF</h3>
+    <p class="msg"><b>${esc(fileName)}</b><br>${wrong ? '<span class="pw-wrong">암호가 틀렸습니다. 다시 입력하세요.</span>' : '이 문서를 열려면 암호를 입력하세요.'}</p>
+    <div class="pw-row"><input type="password" name="pw" autocomplete="off" spellcheck="false" placeholder="암호">
+      <button type="button" class="btn pw-eye" title="암호 보기/숨기기">보기</button></div>
+    <div class="dlg-foot"><span class="sp"></span><button type="button" class="btn" data-v="cancel">취소</button><button type="button" class="btn btn-primary" data-v="ok">열기</button></div></form>`);
+  const inp = d.querySelector('[name=pw]');
+  return run(d, (finish) => {
+    d.querySelector('[data-v=cancel]').addEventListener('click', () => finish(null));
+    d.querySelector('[data-v=ok]').addEventListener('click', () => finish(inp.value));
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); finish(inp.value); } });
+    d.querySelector('.pw-eye').addEventListener('click', (e) => {
+      const show = inp.type === 'password';
+      inp.type = show ? 'text' : 'password';
+      e.target.textContent = show ? '숨기기' : '보기';
+      inp.focus();
+    });
+    if (wrong) d.querySelector('form').classList.add('shake');
+    setTimeout(() => inp.focus(), 0);
+  });
+}
+
 /* ───────── 색 고르기 ───────── */
 function swatches(list, cur, name) {
   return `<div class="swatches" data-name="${name}">${list.map((c) => `<button type="button" class="sw${c.toLowerCase() === String(cur).toLowerCase() ? ' on' : ''}" data-c="${c}" style="--c:${c}" title="${c}"></button>`).join('')}

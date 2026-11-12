@@ -335,6 +335,14 @@ table.keys td:first-child { width: 52%; padding-right: 6px; }
 .btn.danger { color: var(--danger); }
 .btn.danger:hover { border-color: var(--danger); color: var(--danger); }
 .msg { margin: 4px 0 6px; font-size: 14.5px; line-height: 1.6; }
+.dlg-pw { width: min(400px, calc(100vw - 32px)); overflow-x: hidden; }
+.dlg-pw .msg b { word-break: break-all; }
+.pw-row { display: flex; gap: 6px; }
+.pw-row input { flex: 1; min-width: 0; padding: 9px 12px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--bg); font-size: 15px; outline: none; color: var(--ink); }
+.pw-row input:focus { border-color: var(--accent); }
+.pw-wrong { color: var(--danger); font-weight: 600; }
+.shake { animation: shake .35s; }
+@keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
 .dlg-confirm { width: min(380px, calc(100vw - 32px)); }
 .dlg-stack { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .dlg-stack .btn { padding: 10px 14px; font-size: 14px; }

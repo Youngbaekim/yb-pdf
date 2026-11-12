@@ -8,7 +8,7 @@ import { importPdf, exportPdf } from './pdfwrite.js';
 import { subsetFor } from './fonts.js';
 import { setupPages, buildDom, clearPages, setScale, targetScale, goTo } from './viewer.js';
 import { resetHistory } from './annots.js';
-import { toast } from './dialogs.js';
+import { toast, passwordBox } from './dialogs.js';
 import { dbp } from './db.js';
 import { native, pathHandle, storable, revive, nativeOpenDialog, nativeSaveDialog } from './native.js';
 import { newTab, activeIsEmpty, findTab, activate, openInNewWindow, tabs, moveTab, active } from './docs.js';
@@ -147,10 +147,18 @@ export async function openBytes(bytes, name, handle = null, o = {}) {
       imp = { annots: [], cleanBytes: bytes, encrypted, broken: !encrypted };
     }
     // 2) 화면에 표시할 문서 준비
-    const pdf = await loadPdf(imp.cleanBytes, (updatePassword, reason) => {
-      const pw = window.prompt(reason === 2 ? '암호가 틀렸습니다. 다시 입력하세요.' : '암호가 걸린 PDF입니다. 암호를 입력하세요.');
-      if (pw == null) updatePassword(new Error('취소'));
-      else updatePassword(pw);
+    // 암호가 걸린 문서: 암호 입력 창 (틀리면 다시 묻기). 설치판은 브라우저의 prompt 창이 없어 직접 만든 창을 씀
+    const pdf = await loadPdf(imp.cleanBytes, async (updatePassword, reason) => {
+      emit('loading', false);
+      const pw = await passwordBox(name, reason === 2);
+      if (pw == null) {
+        const err = new Error('암호 입력 취소');
+        err.name = 'PasswordCancel';
+        updatePassword(err);
+        return;
+      }
+      emit('loading', true);
+      updatePassword(pw);
     });
     // 3) 탭: 지금 탭이 비어 있으면 그 탭, 아니면 새 탭
     if (!activeIsEmpty() || !active()) newTab();
@@ -162,7 +170,7 @@ export async function openBytes(bytes, name, handle = null, o = {}) {
     S.fileSize = bytes.length;
     S.cleanBytes = imp.cleanBytes;
     S.readOnly = !!(imp.encrypted || imp.broken);
-    S.readOnlyReason = imp.encrypted ? '보안(암호화)이 설정된 PDF는 보기만 할 수 있습니다.' : imp.broken ? '이 PDF는 구조가 특이하여 편집 저장을 지원하지 않습니다(보기 전용).' : '';
+    S.readOnlyReason = imp.encrypted ? '암호·보안이 설정된 PDF는 보기만 할 수 있습니다(주석 저장 불가).' : imp.broken ? '이 PDF는 구조가 특이하여 편집 저장을 지원하지 않습니다(보기 전용).' : '';
     S.dirty = !!o.dirty;
     S.dirHint = o.dirHint || null;
     S.current = 0;
@@ -180,7 +188,7 @@ export async function openBytes(bytes, name, handle = null, o = {}) {
     else if (!o.annots && imp.annots.length) toast(`YB-PDF 주석 ${imp.annots.length}개를 불러왔습니다.`);
   } catch (e) {
     console.error(e);
-    toast(e?.name === 'PasswordException' ? '암호를 입력하지 않아 열지 않았습니다.' : `PDF를 열 수 없습니다 (${name}). 손상되었거나 PDF가 아닌 파일입니다.`, 4000);
+    toast(e?.name === 'PasswordCancel' || e?.name === 'PasswordException' || /암호 입력 취소/.test(e?.message) ? `암호를 입력하지 않아 열지 않았습니다 (${name}).` : `PDF를 열 수 없습니다 (${name}). 손상되었거나 PDF가 아닌 파일입니다.`, 4000);
   } finally {
     emit('loading', false);
   }
