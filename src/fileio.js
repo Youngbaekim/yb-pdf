@@ -17,11 +17,13 @@ export const canPick = !!native || 'showOpenFilePicker' in window; // 같은 파
 const PDF_TYPE = [{ description: 'PDF 문서', accept: { 'application/pdf': ['.pdf'] } }];
 
 /* ───────── 최근 파일 (파일 위치 기억) ───────── */
-export async function recentList() {
+const RECENT_MAX = 300; // 최근 파일 보관 개수
+/** @param {number} [limit] */
+export async function recentList(limit = RECENT_MAX) {
   const db = await dbp;
   if (!db) return [];
   const all = await db.getAll('recent').catch(() => []);
-  return all.sort((a, b) => b.at - a.at).slice(0, 12).map((r) => ({ ...r, handle: revive(r.handle) }));
+  return all.sort((a, b) => b.at - a.at).slice(0, limit).map((r) => ({ ...r, handle: revive(r.handle) }));
 }
 async function remember(handle) {
   const db = await dbp;
@@ -30,8 +32,8 @@ async function remember(handle) {
     // 같은 이름의 다른 파일은 구분하지 않고 이름 기준으로 최신 것만 보관
     await db.put('recent', { name: handle.name, handle: storable(handle), at: Date.now() });
     const all = await db.getAll('recent');
-    if (all.length > 12) {
-      all.sort((a, b) => b.at - a.at).slice(12).forEach((r) => db.delete('recent', r.name));
+    if (all.length > RECENT_MAX) {
+      all.sort((a, b) => b.at - a.at).slice(RECENT_MAX).forEach((r) => db.delete('recent', r.name));
     }
   } catch { /* 무시 */ }
   emit('recent');

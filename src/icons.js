@@ -25,6 +25,9 @@ export const ICONS = {
   // 도구 줄 위치 옮기기: 왼쪽으로(|←) / 오른쪽으로(→|)
   toLeft: s('<path d="M4 5v14"/><path d="M20 12H8"/><path d="m13 7-5 5 5 5"/>'),
   toRight: s('<path d="M20 5v14"/><path d="M4 12h12"/><path d="m11 7 5 5-5 5"/>'),
+  // 전체 화면 들어가기 / 나오기
+  full: s('<path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/>'),
+  fullExit: s('<path d="M9 4v4a1 1 0 0 1-1 1H4M20 9h-4a1 1 0 0 1-1-1V4M15 20v-4a1 1 0 0 1 1-1h4M4 15h4a1 1 0 0 1 1 1v4"/>'),
   up: s('<path d="m6 15 6-6 6 6"/>'),
   down: s('<path d="m6 9 6 6 6-6"/>'),
   plus: s('<path d="M12 5v14M5 12h14"/>'),

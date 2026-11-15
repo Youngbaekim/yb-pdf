@@ -14,8 +14,9 @@ import { PALETTE, swatches, bindSwatches, toast, openSignPad, getSigns, deleteSi
 import { FONT_LABEL } from './pdfwrite.js';
 import './overlay.js';
 import { initFind, openFind, closeFind, findOpen, findNext } from './find.js';
+import { initOutline, showOutline, outlineCount } from './outline.js';
 
-const VERSION = 'v0.7.1';
+const VERSION = 'v0.8.0';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const app = $('#app');
@@ -100,6 +101,7 @@ function showTab(t) {
   document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === t));
   document.querySelectorAll('.tab-body').forEach((b) => { b.hidden = b.id !== `tab-${t}`; });
   if (t === 'pages') buildThumbs();
+  if (t === 'outline') showOutline();
   if (t === 'list') renderList();
   if (t === 'file') renderFileTab();
 }
@@ -403,7 +405,7 @@ function updateUndo() {
 /* ───────── 파일 탭 ───────── */
 const kb = (n) => (n > 1048576 ? `${(n / 1048576).toFixed(1)}MB` : `${Math.max(1, Math.round(n / 1024))}KB`);
 async function renderFileTab() {
-  const recent = await recentList();
+  const recent = await recentList(10);
   $('#tab-file').innerHTML = `
     <section class="sec"><div class="file-btns">
       <button class="fbtn" data-cmd="open">${ICONS.open}<span>열기</span><kbd>Ctrl+O</kbd></button>
@@ -423,6 +425,7 @@ async function renderFileTab() {
       <tr><td><kbd>V H M P N T E S X</kbd></td><td>선택·손·형광펜·펜·메모·텍스트·수정·서명·지우개</td></tr>
       <tr><td><kbd>Ctrl</kbd>+휠, <kbd>Ctrl +/−/0</kbd></td><td>확대·축소 / 폭 맞춤</td></tr>
       <tr><td><kbd>Ctrl+F</kbd>, <kbd>F3</kbd></td><td>찾기 (띄어쓰기 무시) / 다음 결과</td></tr>
+      <tr><td><kbd>F11</kbd></td><td>전체 화면 켜기·끄기</td></tr>
       <tr><td><kbd>Ctrl+2</kbd></td><td>1쪽 / 2쪽 보기</td></tr>
       <tr><td><kbd>PageUp/Down</kbd>, <kbd>Home/End</kbd></td><td>쪽 이동</td></tr>
       <tr><td><kbd>Ctrl+\\</kbd></td><td>메뉴 접기·펼치기</td></tr>
@@ -449,12 +452,27 @@ $('#tab-file').addEventListener('click', async (e) => {
 on('recent', () => { if (tab === 'file') renderFileTab(); renderRecentEmpty(); });
 
 /* 첫 화면의 최근 파일 */
+// 한 줄짜리 목록: 처음 50개, 맨 아래 [더 보기]를 누르면 30개씩 더
+let recentShown = 50;
 async function renderRecentEmpty() {
   const list = await recentList();
-  const when = (t) => new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  $('#recent-empty').innerHTML = list.length ? `<h4>최근 PDF</h4>${list.slice(0, 10).map((r) => `<button class="rc-open" data-name="${esc(r.name)}" title="${esc(r.handle?.__path || r.name)}"><svg class="rc-ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg><span class="rc-nm">${esc(r.name)}</span><small>${when(r.at)}</small></button>`).join('')}` : '';
+  const when = (t) => {
+    const d = new Date(t), now = new Date();
+    return d.toDateString() === now.toDateString()
+      ? d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString('ko-KR', { year: d.getFullYear() === now.getFullYear() ? undefined : '2-digit', month: 'numeric', day: 'numeric' });
+  };
+  // 폴더는 끝의 두 단계만 (예: …\교육혁신팀\2026)
+  const dirOf = (p) => { const seg = p.split(/[\\/]/).slice(0, -1).filter(Boolean); return seg.length > 2 ? `…\\${seg.slice(-2).join('\\')}` : seg.join('\\'); };
+  const rows = list.slice(0, recentShown).map((r) => {
+    const p = r.handle?.__path || '';
+    return `<button class="rc-row" data-name="${esc(r.name)}" title="${esc(p || r.name)}"><svg class="rc-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg><span class="rc-nm">${esc(r.name)}</span>${p ? `<span class="rc-dir">${esc(dirOf(p))}</span>` : ''}<small>${when(r.at)}</small></button>`;
+  }).join('');
+  const more = list.length > recentShown ? `<button class="rc-more" id="rc-more">더 보기 (${list.length - recentShown}개 남음)</button>` : '';
+  $('#recent-empty').innerHTML = list.length ? `<h4>최근 PDF <span>${list.length}개</span></h4><div class="rc-rows">${rows}</div>${more}` : '';
 }
 $('#recent-empty').addEventListener('click', async (e) => {
+  if (e.target.closest('#rc-more')) { recentShown += 30; renderRecentEmpty(); return; }
   const b = e.target.closest('[data-name]');
   if (!b) return;
   const r = (await recentList()).find((x) => x.name === b.dataset.name);
@@ -473,6 +491,7 @@ window.addEventListener('keydown', (e) => {
   if (mod && k === 'o') { e.preventDefault(); pickAndOpen(); return; }
   if (mod && k === 'p' && S.pdf) { e.preventDefault(); printDoc(); return; }
   if (mod && k === 'f') { e.preventDefault(); openFind(); return; } // 찾기 (브라우저 찾기 대신)
+  if (k === 'f11') { e.preventDefault(); toggleFull(); return; } // 전체 화면
   if (k === 'f3') { e.preventDefault(); findNext(e.shiftKey); return; }
   if (mod && k === 'w' && active()) { e.preventDefault(); closeTab(active().id); return; } // 설치한 앱 창에서 동작
   if (typing) return;
@@ -536,6 +555,28 @@ async function startHandoff() {
 initTools();
 initTabs();
 initFind();
+initOutline(() => tab === 'outline' && panelOpen);
+// 책갈피 개수를 탭에 표시
+on('doc', async () => {
+  const pdf = S.pdf;
+  const n = await outlineCount(pdf).catch(() => 0);
+  if (pdf === S.pdf) $('#ol-count').textContent = n ? n : '';
+});
+
+/* ───────── 전체 화면 (F11 · 머리줄 단추) ───────── */
+function updateFullBtn() {
+  const on = !!document.fullscreenElement;
+  $('#btn-full').innerHTML = on ? ICONS.fullExit : ICONS.full;
+  $('#btn-full').title = on ? '전체 화면 끝내기 (F11 · Esc)' : '전체 화면 (F11)';
+  $('#btn-full').classList.toggle('on', on);
+}
+function toggleFull() {
+  if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  else document.documentElement.requestFullscreen?.().catch(() => toast('이 환경에서는 전체 화면을 쓸 수 없습니다.'));
+}
+$('#btn-full').addEventListener('click', toggleFull);
+document.addEventListener('fullscreenchange', () => { updateFullBtn(); requestAnimationFrame(() => V.refit()); });
+updateFullBtn();
 $('#btn-find').addEventListener('click', () => (findOpen() ? closeFind() : openFind()));
 on('find-toggle', () => { $('#btn-find').classList.toggle('on', findOpen()); requestAnimationFrame(() => V.refit()); });
 initDrop();

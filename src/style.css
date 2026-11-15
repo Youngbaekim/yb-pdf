@@ -146,14 +146,20 @@ kbd { font-family: var(--font); font-size: 11px; padding: 1px 5px; border: 1px s
 @media (prefers-color-scheme: dark) { .btn-primary { color: #10151c; } }
 .btn-primary.big { padding: 11px 22px; font-size: 15px; border-radius: 10px; display: inline-flex; align-items: center; gap: 10px; }
 .btn-primary.big kbd { background: transparent; color: inherit; border-color: rgba(255,255,255,.4); opacity: .85; }
-.recent { margin-top: 26px; display: flex; flex-direction: column; gap: 4px; width: min(460px, 92vw); }
-.recent .rc-open { display: flex; align-items: center; gap: 10px; }
-.recent .rc-open .rc-ic { flex: none; color: #c62828; }
-.recent .rc-open .rc-nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.recent .rc-open small { flex: none; font-size: 11.5px; color: var(--soft); }
-.recent h4 { margin: 0 0 4px; font-size: 12px; font-weight: 600; text-align: left; color: var(--soft); }
-.recent .rc-open { text-align: left; padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--pane); color: var(--ink); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.recent .rc-open:hover { border-color: var(--accent); }
+/* 시작 화면 최근 PDF: 한 줄 목록 */
+.recent { margin-top: 26px; display: flex; flex-direction: column; width: min(640px, 92vw); padding-bottom: 30px; }
+.recent h4 { margin: 0 0 6px; font-size: 12px; font-weight: 600; text-align: left; color: var(--soft); }
+.recent h4 span { font-weight: 400; margin-left: 4px; }
+.rc-rows { border: 1px solid var(--line); border-radius: 10px; background: var(--pane); overflow: hidden; }
+.rc-row { display: flex; align-items: center; gap: 9px; width: 100%; height: 32px; padding: 0 12px; text-align: left; font-size: 13px; color: var(--ink); border-top: 1px solid var(--line); }
+.rc-row:first-child { border-top: 0; }
+.rc-row:hover { background: var(--accent-soft); }
+.rc-row .rc-ic { flex: none; color: #c62828; }
+.rc-row .rc-nm { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-row .rc-dir { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: var(--soft); }
+.rc-row small { flex: none; margin-left: auto; padding-left: 8px; font-size: 11.5px; color: var(--soft); font-variant-numeric: tabular-nums; }
+.rc-more { margin-top: 8px; align-self: center; padding: 7px 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--pane); font-size: 13px; color: var(--accent); }
+.rc-more:hover { border-color: var(--accent); }
 .app.drop .viewer::after { content: 'PDF를 놓으면 엽니다'; position: absolute; inset: 12px; display: grid; place-items: center; border: 3px dashed var(--accent); border-radius: 16px; background: rgba(36, 62, 107, .08); color: var(--accent); font-size: 18px; font-weight: 700; z-index: 20; pointer-events: none; }
 
 .loading { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; background: rgba(0,0,0,.08); z-index: 30; font-size: 14px; color: var(--ink); }
@@ -304,8 +310,8 @@ table.keys td:first-child { width: 52%; padding-right: 6px; }
 .recent-list { display: flex; flex-direction: column; gap: 2px; }
 .rc { display: flex; align-items: center; border-radius: 8px; }
 .rc:hover { background: var(--accent-soft); }
-.rc-open { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 7px 8px; text-align: left; font-size: 13px; overflow: hidden; }
-.rc-open small { font-size: 11px; color: var(--soft); }
+.recent-list .rc-open { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 7px 8px; text-align: left; font-size: 13px; overflow: hidden; }
+.recent-list .rc-open small { font-size: 11px; color: var(--soft); }
 .rc-x { width: 26px; height: 26px; color: var(--soft); opacity: 0; border-radius: 6px; }
 .rc:hover .rc-x { opacity: 1; }
 .about p { margin: 0 0 4px; font-size: 12px; color: var(--soft); line-height: 1.55; }
@@ -439,3 +445,20 @@ table.keys td:first-child { width: 52%; padding-right: 6px; }
 .textLayer .endOfContent { display: block; position: absolute; inset: 100% 0 0; z-index: 0; cursor: default; user-select: none; }
 .textLayer.selecting .endOfContent { top: 0; }
 .icon-btn.on { color: var(--accent); background: var(--accent-soft); }
+
+/* 책갈피 */
+.outline { padding: 6px 0 20px; }
+.ol-bar { display: flex; align-items: center; gap: 4px; margin: 4px 0 6px; font-size: 12px; color: var(--soft); }
+.ol-bar button { padding: 3px 8px; border: 1px solid var(--line); border-radius: 7px; font-size: 11.5px; color: var(--soft); }
+.ol-bar button:hover { border-color: var(--accent); color: var(--accent); }
+.ol-row { display: flex; align-items: center; gap: 2px; min-height: 30px; padding: 3px 6px 3px calc(var(--d) * 16px + 2px); border-radius: 7px; cursor: pointer; font-size: 13px; line-height: 1.4; }
+.ol-row:hover { background: var(--accent-soft); }
+.ol-row.on { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.ol-row.on .ol-t { color: var(--accent); font-weight: 600; }
+.ol-tw { flex: none; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 5px; font-size: 11px; color: var(--soft); }
+.ol-tw:not(.leaf):hover { background: var(--line); color: var(--ink); }
+.ol-tw.leaf { pointer-events: none; }
+.ol-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ol-t.b { font-weight: 700; } .ol-t.i { font-style: italic; }
+.ol-p { flex: none; padding-left: 6px; font-size: 11.5px; color: var(--soft); font-variant-numeric: tabular-nums; }
+.tab { white-space: nowrap; }
