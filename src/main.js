@@ -14,10 +14,10 @@ import { PALETTE, swatches, bindSwatches, toast, openSignPad, getSigns, deleteSi
 import { FONT_LABEL } from './pdfwrite.js';
 import './overlay.js';
 import { initFind, openFind, closeFind, findOpen, findNext } from './find.js';
-import { initOutline, showOutline, outlineCount } from './outline.js';
+import { initOutline, showOutline, outlineCount, addBookmark } from './outline.js';
 import { initPages, paintSel } from './pages.js';
 
-const VERSION = 'v0.9.0';
+const VERSION = 'v0.10.0';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const app = $('#app');
@@ -490,6 +490,7 @@ window.addEventListener('keydown', (e) => {
   if (mod && k === 'o') { e.preventDefault(); pickAndOpen(); return; }
   if (mod && k === 'p' && S.pdf) { e.preventDefault(); printDoc(); return; }
   if (mod && k === 'f') { e.preventDefault(); openFind(); return; } // 찾기 (브라우저 찾기 대신)
+  if (mod && k === 'b' && S.pdf && !typing) { e.preventDefault(); if (!panelOpen) togglePanel(true); showTab('outline'); addBookmark(); return; } // 책갈피 추가
   if (k === 'f11') { e.preventDefault(); toggleFull(); return; } // 전체 화면
   if (k === 'f3') { e.preventDefault(); findNext(e.shiftKey); return; }
   if (mod && k === 'w' && active()) { e.preventDefault(); closeTab(active().id); return; } // 설치한 앱 창에서 동작
@@ -541,7 +542,7 @@ window.addEventListener('beforeunload', (e) => {
 on('before-switch', rememberPage);
 $('#btn-new-tab').addEventListener('click', () => { D.openBlankTab(); renderRecentEmpty(); }); // 빈 탭(시작 화면)
 // 다른 창에서 옮겨 온 탭 (끌어 놓기·새 창으로 옮기기)
-on('handoff', (v) => openBytes(v.bytes, v.name, v.handle || null, { dirty: v.dirty, annots: v.prepared ? v.annots : undefined, current: v.current, index: v.index, here: true, dirHint: v.dirHint }));
+on('handoff', (v) => openBytes(v.bytes, v.name, v.handle || null, { dirty: v.dirty, annots: v.prepared ? v.annots : undefined, current: v.current, index: v.index, here: true, dirHint: v.dirHint, outline: v.outline, outlineEdited: v.outlineEdited }));
 async function startHandoff() {
   const key = new URLSearchParams(location.search).get('handoff');
   if (!key) return;
@@ -556,11 +557,13 @@ initTabs();
 initFind();
 initOutline(() => tab === 'outline' && panelOpen);
 // 책갈피 개수를 탭에 표시
-on('doc', async () => {
+const updateOlCount = async () => {
   const pdf = S.pdf;
   const n = await outlineCount(pdf).catch(() => 0);
   if (pdf === S.pdf) $('#ol-count').textContent = n ? n : '';
-});
+};
+on('doc', updateOlCount);
+on('outline', updateOlCount);
 
 /* ───────── 전체 화면 (F11 · 머리줄 단추) ───────── */
 function updateFullBtn() {

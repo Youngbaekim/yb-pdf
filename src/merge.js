@@ -73,7 +73,7 @@ export async function openMerge() {
     const doc = docOf(t);
     items.push({
       key: t.id + Math.random(), name: doc.fileName, size: doc.fileSize, pages: doc.pages.length,
-      get: () => (doc.readOnly ? Promise.resolve(doc.cleanBytes) : exportPdf(doc.cleanBytes, doc.annots, subsetFor)),
+      get: () => (doc.readOnly ? Promise.resolve(doc.cleanBytes) : exportPdf(doc.cleanBytes, doc.annots, subsetFor, doc.outlineEdited ? doc.outline : null)),
     });
     render();
   });

@@ -175,6 +175,9 @@ export async function openBytes(bytes, name, handle = null, o = {}) {
     S.readOnlyReason = imp.encrypted ? '암호·보안이 설정된 PDF는 보기만 할 수 있습니다(주석 저장 불가).' : imp.broken ? '이 PDF는 구조가 특이하여 편집 저장을 지원하지 않습니다(보기 전용).' : '';
     S.dirty = !!o.dirty;
     S.dirHint = o.dirHint || null;
+    S.outline = o.outline || null; // 다른 창에서 옮겨 온 '고친 책갈피' (없으면 문서에서 읽음)
+    S.outlineFor = o.outline ? pdf : null;
+    S.outlineEdited = !!(o.outline && o.outlineEdited);
     S.current = 0;
     resetHistory(o.annots || imp.annots);
     await setupPages();
@@ -208,7 +211,7 @@ export function rememberPage() {
 
 /* ───────── 저장 ───────── */
 export async function buildBytes() {
-  return exportPdf(S.cleanBytes, S.annots, subsetFor);
+  return exportPdf(S.cleanBytes, S.annots, subsetFor, S.outlineEdited ? S.outline : null);
 }
 
 let saving = false;

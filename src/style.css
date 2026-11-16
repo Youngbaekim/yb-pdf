@@ -485,6 +485,25 @@ table.keys td:first-child { width: 52%; padding-right: 6px; }
 .ol-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ol-t.b { font-weight: 700; } .ol-t.i { font-style: italic; }
 .ol-p { flex: none; padding-left: 6px; font-size: 11.5px; color: var(--soft); font-variant-numeric: tabular-nums; }
+#outline:focus { outline: none; }
+.ol-bar { position: sticky; top: -4px; z-index: 2; background: var(--pane); padding: 6px 0 4px; margin-top: 0; }
+.ol-bar .ol-add { border-color: var(--accent); color: var(--accent); font-weight: 600; padding: 3px 10px; }
+.ol-bar .ol-add:hover { background: var(--accent); color: #fff; }
+.ol-bar button:disabled { opacity: .4; pointer-events: none; }
+.ol-cnt { margin-left: 4px; }
+.ol-tools { position: sticky; top: 26px; z-index: 2; display: flex; align-items: center; gap: 2px; margin: 0 0 6px; padding: 3px 4px; border: 1px solid var(--line); border-radius: 9px; background: var(--pane); }
+.ol-tools button { min-width: 28px; height: 26px; padding: 0 5px; border-radius: 6px; font-size: 13px; color: var(--ink); }
+.ol-tools button:hover { background: var(--accent-soft); color: var(--accent); }
+.ol-tools button:disabled { opacity: .3; pointer-events: none; }
+.ol-tools button.danger:hover { color: var(--danger); }
+.ol-tools .sep { width: 1px; height: 16px; margin: 0 3px; background: var(--line); }
+.ol-tools .sp { flex: 1; }
+.ol-row.sel { background: var(--accent-soft); outline: 1.5px solid var(--accent); outline-offset: -1.5px; }
+.ol-row.dragging { opacity: .45; }
+.ol-row.drop-before { box-shadow: inset 0 2.5px 0 var(--accent); }
+.ol-row.drop-after { box-shadow: inset 0 -2.5px 0 var(--accent); }
+.ol-row.drop-child { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+.ol-in { flex: 1; min-width: 0; padding: 2px 6px; border: 1.5px solid var(--accent); border-radius: 5px; background: var(--bg); color: var(--ink); font: inherit; font-size: 13px; outline: none; }
 .tab { white-space: nowrap; }
 
 #thumbs:focus { outline: none; }

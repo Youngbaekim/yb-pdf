@@ -41,7 +41,20 @@ export const canUndo = () => undoStack.length > 0;
 export const canRedo = () => redoStack.length > 0;
 
 /** 쪽 편집(삭제·붙여넣기 등): 파일 자체가 바뀌므로 '파일+주석' 통째로 기록 */
-const snap = () => ({ pagesSnap: true, bytes: S.cleanBytes, annots: S.annots, current: S.current });
+const cloneOl = (o) => (o ? structuredClone(o) : o);
+const snap = () => ({ pagesSnap: true, bytes: S.cleanBytes, annots: S.annots, current: S.current, outline: cloneOl(S.outline), outlineEdited: S.outlineEdited });
+const olSnap = () => ({ olSnap: true, outline: cloneOl(S.outline), edited: S.outlineEdited });
+/** 책갈피 고치기 기록 (prev = 고치기 전 olSnap) */
+export function commitOutline(prev) {
+  undoStack.push(prev);
+  if (undoStack.length > LIMIT) undoStack.shift();
+  redoStack = [];
+  S.outlineEdited = true;
+  markDirty();
+  emit('outline');
+}
+export const outlineSnapshot = olSnap;
+function restoreOl(e) { S.outline = e.outline; S.outlineEdited = e.edited; if (S.outline) S.outlineFor = S.pdf; markDirty(); emit('outline'); }
 export function commitPages(prev) {
   undoStack.push(prev || snap());
   if (undoStack.length > LIMIT) undoStack.shift();
@@ -53,6 +66,7 @@ export const pageSnapshot = snap;
 export function undo() {
   if (!undoStack.length) return;
   if (undoStack.at(-1)?.pagesSnap) { redoStack.push(snap()); S.selected = null; markDirty(); emit('pages-restore', undoStack.pop()); return; }
+  if (undoStack.at(-1)?.olSnap) { redoStack.push(olSnap()); restoreOl(undoStack.pop()); return; }
   redoStack.push(S.annots);
   S.annots = undoStack.pop();
   if (S.selected && !S.annots.some((a) => a.id === S.selected)) S.selected = null;
@@ -62,6 +76,7 @@ export function undo() {
 export function redo() {
   if (!redoStack.length) return;
   if (redoStack.at(-1)?.pagesSnap) { undoStack.push(snap()); S.selected = null; markDirty(); emit('pages-restore', redoStack.pop()); return; }
+  if (redoStack.at(-1)?.olSnap) { undoStack.push(olSnap()); restoreOl(redoStack.pop()); return; }
   undoStack.push(S.annots);
   S.annots = redoStack.pop();
   if (S.selected && !S.annots.some((a) => a.id === S.selected)) S.selected = null;

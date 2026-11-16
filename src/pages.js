@@ -6,6 +6,7 @@ import { loadPdf } from './pdfjs.js';
 import { removePages, extractPages, insertPages } from './pdfwrite.js';
 import { setupPages, buildDom, clearPages, setScale, targetScale, goTo } from './viewer.js';
 import { commitPages, pageSnapshot } from './annots.js';
+import { ensureOutline, remapOutline } from './outline.js';
 import { toast } from './dialogs.js';
 import { ICONS } from './icons.js';
 import { openBytes } from './fileio.js';
@@ -100,10 +101,13 @@ function setSel(list, anc = list.at(-1) ?? null) {
 /* ───────── 문서 다시 읽기 ───────── */
 let chain = Promise.resolve();
 /** 바뀐 파일·주석을 화면에 반영 (S.cleanBytes·S.annots는 즉시 바꿔 두어 실행 취소 기록과 어긋나지 않게 함) */
-function apply(bytes, annots, current, selAfter = []) {
+function apply(bytes, annots, current, selAfter = [], outline = S.outline, outlineEdited = S.outlineEdited) {
   S.cleanBytes = bytes;
   S.annots = annots;
   S.selected = null;
+  S.outline = outline;
+  S.outlineEdited = outlineEdited;
+  S.outlineFor = outline ? 'pending' : null; // 다시 읽은 문서에 그대로 붙임
   chain = chain.then(async () => {
     emit('loading', true);
     try {
@@ -111,6 +115,7 @@ function apply(bytes, annots, current, selAfter = []) {
       const old = S.pdf;
       clearPages();
       S.pdf = pdf;
+      if (S.outlineFor === 'pending') S.outlineFor = pdf;
       S.current = Math.max(0, Math.min(current, pdf.numPages - 1));
       await setupPages();
       buildDom();
@@ -133,7 +138,13 @@ function apply(bytes, annots, current, selAfter = []) {
   });
   return chain;
 }
-on('pages-restore', (s) => apply(s.bytes, s.annots, s.current));
+on('pages-restore', (s) => apply(s.bytes, s.annots, s.current, [], s.outline, s.outlineEdited));
+/** 쪽이 바뀐 만큼 책갈피의 쪽 번호도 옮김 (책갈피가 있으면 저장할 때 새로 씀) */
+async function outlineAfter(map) {
+  await ensureOutline();
+  if (!S.outline?.length) return [S.outline, S.outlineEdited];
+  return [remapOutline(S.outline, map), true];
+}
 
 function editable() {
   if (!S.pdf) return false;
@@ -157,10 +168,12 @@ export function deletePages(list = sorted()) {
     const bytes = await removePages(S.cleanBytes, list);
     const shift = (p) => p - list.filter((i) => i < p).length;
     const annots = S.annots.filter((a) => !del.has(a.page)).map((a) => ({ ...a, page: shift(a.page) }));
+    const remain = S.pages.length - list.length;
+    const [ol, olEd] = await outlineAfter((p) => (del.has(p) ? { gone: true, to: Math.min(shift(p), remain - 1) } : shift(p)));
     commitPages(prev);
     const first = Math.min(list[0], S.pages.length - list.length - 1);
     const cur = del.has(S.current) ? first : shift(S.current);
-    await apply(bytes, annots, cur, [first]);
+    await apply(bytes, annots, cur, [first], ol, olEd);
     toast(`${list.length}개 쪽을 삭제했습니다 (${rangeLabel(list)}쪽) · 되돌리기 Ctrl+Z`, 3500);
   });
 }
@@ -202,9 +215,10 @@ export async function pastePages(at) {
     const bytes = await insertPages(S.cleanBytes, c.bytes, at);
     const moved = S.annots.map((a) => (a.page >= at ? { ...a, page: a.page + c.n } : a));
     const added = c.annots.map((a) => ({ ...a, id: uid(), page: a.page + at }));
+    const [ol, olEd] = await outlineAfter((p) => (p >= at ? p + c.n : p));
     commitPages(prev);
     const pasted = range(at, at + c.n - 1);
-    await apply(bytes, [...moved, ...added], at, pasted);
+    await apply(bytes, [...moved, ...added], at, pasted, ol, olEd);
     toast(`${c.n}개 쪽을 ${at + 1}쪽 자리에 붙여넣었습니다 · 되돌리기 Ctrl+Z`, 3000);
   });
 }
@@ -219,8 +233,9 @@ export function duplicatePages(list = sorted()) {
     const bytes = await insertPages(S.cleanBytes, c.bytes, at);
     const moved = S.annots.map((a) => (a.page >= at ? { ...a, page: a.page + c.n } : a));
     const added = c.annots.map((a) => ({ ...a, id: uid(), page: a.page + at }));
+    const [ol, olEd] = await outlineAfter((p) => (p >= at ? p + c.n : p));
     commitPages(prev);
-    await apply(bytes, [...moved, ...added], at, range(at, at + c.n - 1));
+    await apply(bytes, [...moved, ...added], at, range(at, at + c.n - 1), ol, olEd);
     toast(`${c.n}개 쪽을 복제했습니다 · 되돌리기 Ctrl+Z`, 3000);
   });
 }

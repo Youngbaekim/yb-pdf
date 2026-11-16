@@ -38,6 +38,10 @@ export const S = {
   // 주석
   annots: [], // 불변 객체 배열 (고칠 때는 새 객체로 바꿔 넣음)
   selected: null, // 선택한 주석 id
+  // 책갈피 (편집 가능한 모델: [{ id, title, page, x, y, kids, open, bold, italic, color }])
+  outline: null, // null = 아직 문서에서 읽지 않음
+  outlineFor: null, // 모델이 속한 pdf.js 문서 ('pending' = 다시 읽는 중)
+  outlineEdited: false, // 고쳤으면 저장할 때 문서의 책갈피를 이 모델로 바꿔 씀
   // 보기
   scale: 1,
   zoomMode: pref('zoom', 'width'), // 'width' | 'page' | 숫자(배율)

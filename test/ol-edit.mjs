@@ -1,0 +1,52 @@
+import { chromium } from 'playwright';
+import fs from 'node:fs';
+const b = await chromium.launch();
+const p = await (await b.newContext({ viewport: { width: 1400, height: 860 } })).newPage();
+p.on('pageerror', (e) => console.log('[pageerror]', e.message));
+await p.goto('http://localhost:4173/yb-pdf/'); await p.waitForLoadState('networkidle');
+const drop = (buf, name) => p.evaluate(async ({ b64, name }) => { const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)); const dt = new DataTransfer(); dt.items.add(new File([bin], name, { type: 'application/pdf' })); document.getElementById('app').dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true })); }, { b64: Buffer.from(buf).toString('base64'), name });
+const olOf = () => p.evaluate(async () => { const { S } = window.__ybpdf; const o = await S.pdf.getOutline(); const w = async (l, d) => (await Promise.all((l || []).map(async (it) => { let dest = it.dest; if (typeof dest === 'string') dest = await S.pdf.getDestination(dest); const pg = dest ? (await S.pdf.getPageIndex(dest[0])) + 1 : '?'; return `${'  '.repeat(d)}${it.title}@${pg}` + (it.items?.length ? '\n' + (await w(it.items, d + 1)) : ''); }))).join('\n'); return w(o, 0); });
+const rows = () => p.$$eval('#outline .ol-row', (r) => r.map((x) => x.textContent.replace(/\s+/g, ' ').trim()).join(' | '));
+await drop(fs.readFileSync('test/sample.pdf'), 'sample.pdf');
+await p.waitForSelector('.page.ready'); await p.waitForTimeout(400);
+await p.click('.tab[data-tab=outline]'); await p.waitForTimeout(300);
+console.log('empty:', (await p.textContent('#outline')).replace(/\s+/g, ' ').trim());
+await p.evaluate(() => window.__ybpdf.V.goTo(2)); await p.waitForTimeout(300);
+await p.keyboard.press('Control+b'); await p.waitForTimeout(300);
+await p.keyboard.press('Control+a'); await p.keyboard.type('서론'); await p.keyboard.press('Enter'); await p.waitForTimeout(200);
+await p.evaluate(() => window.__ybpdf.V.goTo(4)); await p.waitForTimeout(300);
+await p.click('[data-ol=add]'); await p.waitForTimeout(200); await p.keyboard.type('본론'); await p.keyboard.press('Enter'); await p.waitForTimeout(200);
+await p.evaluate(() => window.__ybpdf.V.goTo(1)); await p.waitForTimeout(300);
+await p.click('[data-ol=add]'); await p.waitForTimeout(200); await p.keyboard.type('머리말'); await p.keyboard.press('Enter'); await p.waitForTimeout(200);
+console.log('after add:', await rows());
+await p.click('#outline .ol-row:has-text("본론")'); await p.keyboard.press('Alt+ArrowRight'); await p.waitForTimeout(200);
+console.log('after indent:', await rows());
+await p.screenshot({ path: 'test/ol-edit.png' });
+// 두 번 눌러 이름 바꾸기
+await p.dblclick('#outline .ol-row:has-text("머리말")'); await p.waitForTimeout(200);
+console.log('rename input?', await p.locator('.ol-in').count());
+await p.keyboard.press('Control+a'); await p.keyboard.type('들어가며'); await p.keyboard.press('Enter'); await p.waitForTimeout(200);
+console.log('after rename:', await rows());
+await p.keyboard.press('Control+z'); await p.waitForTimeout(200); console.log('undo:', await rows());
+await p.keyboard.press('Control+y'); await p.waitForTimeout(200); console.log('redo:', await rows());
+// 끌어 놓기: '들어가며'를 '서론' 아래(after)로
+const src = p.locator('#outline .ol-row:has-text("들어가며")'); const dst = p.locator('#outline .ol-row:has-text("서론")');
+await src.dragTo(dst, { targetPosition: { x: 40, y: 27 } }); await p.waitForTimeout(300);
+console.log('after drag:', await rows());
+// 저장 → 다시 열기
+const out = await p.evaluate(async () => Array.from(await window.__ybpdf.buildBytes()));
+fs.writeFileSync('test/ol-out.pdf', Buffer.from(out));
+await drop(out, 'ol-out.pdf'); await p.waitForTimeout(1500);
+console.log('reopened outline:\n' + await olOf());
+console.log('badge', await p.textContent('#ol-count'));
+// 책갈피 있는 문서에서 쪽 삭제 → 책갈피 쪽 번호 따라감
+await drop(fs.readFileSync('test/outline.pdf'), 'outline.pdf'); await p.waitForTimeout(1500);
+await p.click('.tab[data-tab=pages]'); await p.waitForTimeout(400);
+await p.click('.thumb[data-i="1"]'); await p.click('.thumb[data-i="2"]', { modifiers: ['Shift'] });
+await p.keyboard.press('Delete'); await p.waitForTimeout(1500);
+await p.click('.tab[data-tab=outline]'); await p.click('[data-ol=open]'); await p.waitForTimeout(300);
+console.log('after page delete:', await rows());
+const out2 = await p.evaluate(async () => Array.from(await window.__ybpdf.buildBytes()));
+await drop(out2, 'ol-out2.pdf'); await p.waitForTimeout(1500);
+console.log('reopened2:\n' + await olOf());
+await b.close();

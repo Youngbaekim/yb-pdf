@@ -189,7 +189,10 @@ function dataUrlToBytes(url) {
  * @param {object[]} annots        모델
  * @param {(key:string, text:string)=>Promise<Uint8Array>} loadFont  쓰인 글자(text)만 남긴 글꼴 바이트를 돌려줌
  */
-export async function exportPdf(cleanBytes, annots, loadFont) {
+/**
+ * @param {object[]|null} [outline]  고친 책갈피 모델(없으면 문서의 책갈피를 그대로 둠)
+ */
+export async function exportPdf(cleanBytes, annots, loadFont, outline = null) {
   const doc = await PDFDocument.load(cleanBytes, { updateMetadata: false });
   doc.registerFontkit(fontkit);
   const ctx = doc.context;
@@ -333,6 +336,7 @@ export async function exportPdf(cleanBytes, annots, loadFont) {
     if (!arr) { arr = ctx.obj([]); page.node.set(N('Annots'), arr); }
     arr.push(ctx.register(dict));
   }
+  if (outline) writeOutline(doc, outline);
   return doc.save({ updateFieldAppearances: false });
 }
 
@@ -377,4 +381,44 @@ export async function insertPages(bytes, clip, at) {
   const src = await PDFDocument.load(clip, { updateMetadata: false });
   (await doc.copyPages(src, src.getPageIndices())).forEach((p, k) => doc.insertPage(at + k, p));
   return doc.save({ updateFieldAppearances: false });
+}
+
+/* ───────── 책갈피 쓰기 ───────── */
+/** 문서의 책갈피(/Outlines)를 모델로 통째로 바꿈 */
+export function writeOutline(doc, nodes) {
+  const ctx = doc.context;
+  const pages = doc.getPages();
+  doc.catalog.delete(N('Outlines'));
+  if (nodes.length && pages.length) {
+    const shown = (list) => list.reduce((s, n) => s + 1 + (n.open && n.kids?.length ? shown(n.kids) : 0), 0);
+    const dest = (n) => {
+      const pg = pages[Math.max(0, Math.min(pages.length - 1, n.page ?? 0))];
+      if (n.y == null || pg.getRotation().angle % 360) return ctx.obj([pg.ref, 'Fit']);
+      return ctx.obj([pg.ref, 'XYZ', n.x == null ? null : n.x, n.y, null]);
+    };
+    const build = (list, parent) => {
+      const refs = list.map(() => ctx.nextRef());
+      list.forEach((n, i) => {
+        const d = { Title: PDFHexString.fromText(String(n.title || '(제목 없음)')), Parent: parent, Dest: dest(n) };
+        if (i > 0) d.Prev = refs[i - 1];
+        if (i < list.length - 1) d.Next = refs[i + 1];
+        if (n.kids?.length) {
+          const kid = build(n.kids, refs[i]);
+          d.First = kid[0];
+          d.Last = kid[kid.length - 1];
+          d.Count = n.open ? shown(n.kids) : -n.kids.length;
+        }
+        const c = n.color;
+        if (c && (c[0] || c[1] || c[2])) d.C = [c[0] / 255, c[1] / 255, c[2] / 255];
+        if (n.bold || n.italic) d.F = (n.italic ? 1 : 0) | (n.bold ? 2 : 0);
+        ctx.assign(refs[i], ctx.obj(d));
+      });
+      return refs;
+    };
+    const root = ctx.nextRef();
+    const top = build(nodes, root);
+    ctx.assign(root, ctx.obj({ Type: 'Outlines', First: top[0], Last: top[top.length - 1], Count: shown(nodes) }));
+    doc.catalog.set(N('Outlines'), root);
+  }
+  collectGarbage(ctx); // 예전 책갈피 객체 정리
 }
