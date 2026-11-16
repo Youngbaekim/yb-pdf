@@ -6,7 +6,7 @@ import { applyIcons, ICONS } from './icons.js';
 import * as V from './viewer.js';
 import * as A from './annots.js';
 import { initTools, setTool, select, editAnnot } from './tools.js';
-import { pickAndOpen, openHandle, openBytes, save, initDrop, recentList, forget, printDoc, rememberPage, canPick } from './fileio.js';
+import { pickAndOpen, openHandle, openBytes, save, initDrop, recentList, forget, printDoc, rememberPage, canPick, buildBytes } from './fileio.js';
 import * as D from './docs.js';
 import { initTabs, anyDirty, active, closeTab, takeHandoff } from './docs.js';
 import { openMerge } from './merge.js';
@@ -15,8 +15,9 @@ import { FONT_LABEL } from './pdfwrite.js';
 import './overlay.js';
 import { initFind, openFind, closeFind, findOpen, findNext } from './find.js';
 import { initOutline, showOutline, outlineCount } from './outline.js';
+import { initPages, paintSel } from './pages.js';
 
-const VERSION = 'v0.8.0';
+const VERSION = 'v0.9.0';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const app = $('#app');
@@ -337,6 +338,7 @@ function buildThumbs() {
   thumbIO = new IntersectionObserver((ents) => ents.forEach((e) => { if (e.isIntersecting) { drawThumb(e.target); thumbIO.unobserve(e.target); } }), { root: box.parentElement, rootMargin: '300px 0px' });
   box.querySelectorAll('.thumb').forEach((t) => thumbIO.observe(t));
   box.querySelector('.thumb.on')?.scrollIntoView({ block: 'center' });
+  paintSel();
 }
 async function drawThumb(btn) {
   const i = Number(btn.dataset.i);
@@ -352,10 +354,7 @@ async function drawThumb(btn) {
     await page.render({ canvas: cv, viewport: vp }).promise;
   } catch { /* 무시 */ }
 }
-$('#thumbs').addEventListener('click', (e) => {
-  const t = e.target.closest('.thumb');
-  if (t) V.goTo(Number(t.dataset.i));
-});
+initPages((i) => V.goTo(i)); // 쪽 선택·삭제·복사·붙여넣기 (pages.js)
 
 /* ───────── 주석 목록 ───────── */
 const TYPE_ICON = { highlight: 'highlight', ink: 'pen', note: 'note', text: 'text', replace: 'replace', sign: 'sign' };
@@ -614,4 +613,4 @@ function showUpdate(worker) {
 }
 
 // 개발·점검용
-window.__ybpdf = { S, A, V, D };
+window.__ybpdf = { S, A, V, D, buildBytes };

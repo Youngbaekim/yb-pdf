@@ -276,9 +276,33 @@ kbd { font-family: var(--font); font-size: 11px; padding: 1px 5px; border: 1px s
 .thumb .tw { display: block; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
 .thumb canvas { width: 100%; height: 100%; display: block; }
 .thumb .tn { font-size: 11.5px; color: var(--soft); }
-.thumb.on { background: var(--accent-soft); }
-.thumb.on .tw { outline: 2px solid var(--accent); outline-offset: 1px; }
+.thumb { position: relative; user-select: none; -webkit-user-select: none; }
 .thumb.on .tn { color: var(--accent); font-weight: 700; }
+.thumb.on .tw { outline: 1.5px dashed var(--accent); outline-offset: 2px; }
+.thumb.sel { background: var(--accent-soft); }
+.thumb.sel .tw { outline: 2.5px solid var(--accent); outline-offset: 1px; }
+.thumb.sel::after { content: '✓'; position: absolute; top: 1px; right: 1px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.thumb.ins-before::before, .thumb.ins-after::before, .thumb.gap-before::before, .thumb.gap-after::before { content: ''; position: absolute; top: 2px; bottom: 20px; width: 4px; border-radius: 2px; background: var(--accent); }
+.thumb.ins-before::before, .thumb.gap-before::before { left: -6px; }
+.thumb.ins-after::before, .thumb.gap-after::before { right: -6px; }
+.thumb.gap-before::before, .thumb.gap-after::before { opacity: .35; }
+.thumb.ins-before::before, .thumb.ins-after::before { opacity: 1; box-shadow: 0 0 0 3px var(--accent-soft); }
+.thumbs { cursor: default; }
+.thumb:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--accent); }
+
+/* 쪽 편집 막대 */
+.pg-bar { position: sticky; top: -4px; z-index: 2; margin: 0 -14px; padding: 8px 14px 6px; background: var(--pane); border-bottom: 1px solid var(--line); }
+.pg-row { display: flex; align-items: center; gap: 2px; }
+.pg-sel { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg-row .icon-btn { width: 30px; height: 30px; }
+.pg-row .icon-btn svg { width: 18px; height: 18px; }
+.pg-row .icon-btn:disabled { opacity: .35; pointer-events: none; }
+.pg-row .icon-btn.danger:hover { color: var(--danger); }
+.pg-hint { margin-top: 4px; font-size: 11px; color: var(--soft); line-height: 1.7; }
+.pg-hint kbd { font-size: 10px; padding: 0 4px; }
+.tab-menu button:disabled { opacity: .4; pointer-events: none; }
+.tab-menu .mi { flex: 1; }
+.tab-menu button kbd { font-size: 10px; margin-left: 12px; }
 
 /* 주석 목록 */
 .annot-list { padding-top: 6px; }
@@ -462,3 +486,5 @@ table.keys td:first-child { width: 52%; padding-right: 6px; }
 .ol-t.b { font-weight: 700; } .ol-t.i { font-style: italic; }
 .ol-p { flex: none; padding-left: 6px; font-size: 11.5px; color: var(--soft); font-variant-numeric: tabular-nums; }
 .tab { white-space: nowrap; }
+
+#thumbs:focus { outline: none; }

@@ -355,3 +355,26 @@ export async function mergePdfs(list) {
 }
 
 export { PDFNumber, LineJoinStyle, setLineJoin };
+
+/* ───────── 쪽 편집 (삭제·복사·붙여넣기) ───────── */
+/** 지정한 쪽(0부터)을 지운 새 파일 */
+export async function removePages(bytes, idxs) {
+  const doc = await PDFDocument.load(bytes, { updateMetadata: false });
+  [...new Set(idxs)].sort((a, b) => b - a).forEach((i) => doc.removePage(i));
+  collectGarbage(doc.context);
+  return doc.save({ updateFieldAppearances: false });
+}
+/** 지정한 쪽만 순서대로 담은 새 파일 */
+export async function extractPages(bytes, idxs) {
+  const src = await PDFDocument.load(bytes, { updateMetadata: false });
+  const out = await PDFDocument.create();
+  (await out.copyPages(src, idxs)).forEach((p) => out.addPage(p));
+  return out.save();
+}
+/** clip의 모든 쪽을 at 자리(0부터)에 끼운 새 파일 */
+export async function insertPages(bytes, clip, at) {
+  const doc = await PDFDocument.load(bytes, { updateMetadata: false });
+  const src = await PDFDocument.load(clip, { updateMetadata: false });
+  (await doc.copyPages(src, src.getPageIndices())).forEach((p, k) => doc.insertPage(at + k, p));
+  return doc.save({ updateFieldAppearances: false });
+}
